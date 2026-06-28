@@ -1,36 +1,45 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# FinLivre
 
-## Getting Started
+*Enfim livre — organize your finances and finally be free.*
 
-First, run the development server:
+A local-first personal finance app. Import a bank or credit-card statement and FinLivre turns it
+into a clear financial picture: spending by category, income vs expense, and upcoming installment
+commitments. Built to handle Brazilian credit-card statements, including installments (parcelas).
+
+> Status: in development. Milestone 1 (OFX import + dashboard) in progress.
+
+## Why local-first
+
+Your financial data is stored only in your browser (IndexedDB) and never sent to a server.
+Parsing happens entirely on your device. This is a deliberate design choice: privacy by default,
+and a one-click sample statement so anyone can try the app without uploading their own data.
+
+## Tech
+
+- Next.js 16 (App Router) and React 19
+- TypeScript
+- Tailwind CSS v4
+- Dexie (IndexedDB) for local-first storage
+- Recharts for data visualization
+
+## How it works
+
+Every statement format is just an importer that produces a list of entries. Each entry is
+normalized into a single ledger model, categorized by a merchant dictionary that learns from
+your corrections, and stored locally. The dashboard reads reactively from that ledger.
+
+## Getting started
 
 ```bash
+npm install
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open http://localhost:3000.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Roadmap
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
-
-## Learn More
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+1. OFX import, categorization, and a spending dashboard (current)
+2. Manual entries and income, for income vs expense and net cashflow
+3. Recurring commitments and installment forecasting
+4. Multiple accounts, CSV/PDF import, and budgets per category
