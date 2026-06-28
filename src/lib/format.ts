@@ -14,6 +14,18 @@ export function currentMonth(): string {
   return new Date().toISOString().slice(0, 7); // 'yyyy-MM'
 }
 
+export function addMonths(yearMonth: string, n: number): string {
+  const [year, month] = yearMonth.split('-').map(Number);
+  const d = new Date(year, month - 1 + n, 1);
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+}
+
+export function monthDiff(from: string, to: string): number {
+  const [fy, fm] = from.split('-').map(Number);
+  const [ty, tm] = to.split('-').map(Number);
+  return (ty - fy) * 12 + (tm - fm);
+}
+
 // Which month an entry belongs to for budgeting purposes.
 // billingMonth (from OFX DTEND) takes priority over the raw purchase date.
 export function effectiveMonth(entry: Pick<Entry, 'date' | 'billingMonth'>): string {

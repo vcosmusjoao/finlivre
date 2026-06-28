@@ -1,13 +1,14 @@
-import { ofxImporter, type ParsedEntry } from "./importers/ofx";
+import { ofxImporter, parseOfxMeta, type ParsedEntry } from "./importers/ofx";
 import { db, type Direction } from "./db";
 import { categorize } from "./categorize";
 
 export interface ManualEntryInput {
-  date: string;        // ISO yyyy-mm-dd
+  date: string;
   description: string;
-  amountCents: number; // always positive
+  amountCents: number;
   direction: Direction;
   category: string;
+  accountId?: number;
 }
 
 export async function addManualEntry(input: ManualEntryInput): Promise<void> {
@@ -23,7 +24,10 @@ export async function addManualEntry(input: ManualEntryInput): Promise<void> {
   });
 }
 
-export async function importOfx(fileText: string): Promise<{ added: number; skipped: number }> {
+export async function importOfx(
+  fileText: string,
+  accountId?: number
+): Promise<{ added: number; skipped: number }> {
   const entries = ofxImporter.parse(fileText);
 
   const existingHashes = new Set(
@@ -41,11 +45,47 @@ export async function importOfx(fileText: string): Promise<{ added: number; skip
     category: categories[i],
     hash: generateHash(entry),
     importedAt: new Date().toISOString(),
+    ...(accountId !== undefined && { accountId }),
   }));
 
   await db.entries.bulkAdd(toInsert);
 
+  // Store LEDGERBAL as an InvoiceStatement so the invoice card can show it
+  if (accountId !== undefined) {
+    const meta = parseOfxMeta(fileText);
+    if (meta.ledgerBalanceCents !== undefined && meta.statementMonth) {
+      await db.invoiceStatements
+        .where('[accountId+month]')
+        .equals([accountId, meta.statementMonth])
+        .delete()
+        .catch(() => {
+          // compound index may not exist in older DB versions — safe to ignore
+        });
+      await db.invoiceStatements.add({
+        accountId,
+        month: meta.statementMonth,
+        balanceCents: meta.ledgerBalanceCents,
+        importedAt: new Date().toISOString(),
+      });
+    }
+  }
+
   return { added: toInsert.length, skipped: entries.length - toInsert.length };
+}
+
+/** Creates a demo Nubank account (if not already present) and imports the sample OFX. */
+export async function importSampleData(): Promise<{ added: number; skipped: number }> {
+  const existing = await db.accounts.where('name').equals('Nubank (demo)').first();
+  const accountId = existing?.id ?? await db.accounts.add({
+    name: 'Nubank (demo)',
+    type: 'credit_card',
+    color: '#820AD1',
+    closingDay: 5,
+  });
+
+  const res = await fetch('/sample.ofx');
+  const text = await res.text();
+  return importOfx(text, accountId as number);
 }
 
 function generateHash(entry: ParsedEntry): string {

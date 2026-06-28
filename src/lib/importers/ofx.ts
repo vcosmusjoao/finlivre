@@ -1,5 +1,27 @@
 import type { Entry } from "../db";
 
+/** Metadata extracted from an OFX file that isn't part of individual transactions. */
+export interface OFXMeta {
+  ledgerBalanceCents?: number; // absolute value of LEDGERBAL (what is owed on the card)
+  statementMonth?: string;     // yyyy-MM derived from DTEND
+}
+
+/** Extracts invoice-level metadata from an OFX file (LEDGERBAL, statement period). */
+export function parseOfxMeta(fileText: string): OFXMeta {
+  const dtEndMatch = fileText.match(/<DTEND>(\d{8})/i);
+  const statementMonth = dtEndMatch
+    ? `${dtEndMatch[1].slice(0, 4)}-${dtEndMatch[1].slice(4, 6)}`
+    : undefined;
+
+  // LEDGERBAL block: <LEDGERBAL><BALAMT>-1658.76<DTASOF>...
+  const balMatch = fileText.match(/<LEDGERBAL>[\s\S]*?<BALAMT>\s*(-?[\d.]+)/i);
+  const ledgerBalanceCents = balMatch
+    ? Math.abs(Math.round(parseFloat(balMatch[1]) * 100))
+    : undefined;
+
+  return { ledgerBalanceCents, statementMonth };
+}
+
 /**
  * An importer turns a file's text into raw entries. Categorization, hashing and
  * persistence happen later in the pipeline — importers only parse. Every format

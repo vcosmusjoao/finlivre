@@ -14,42 +14,63 @@ export type AccountType = "credit_card" | "bank" | "cash" | "other";
 
 export interface Account {
   id?: number;
-  name: string; // e.g. "Nubank", "Salary account"
+  name: string;
   type: AccountType;
-  color?: string;
+  color: string;         // hex — smart defaults for known banks, user-editable
+  closingDay?: number;   // day of month when billing cycle closes (credit cards only)
 }
 
 export interface Category {
   id?: number;
-  name: string; // e.g. "Food"
+  name: string;
   color?: string;
-  monthlyBudgetCents?: number; // optional budget, in cents
+  monthlyBudgetCents?: number;
 }
 
 export interface Installment {
-  current: number; // 3
-  total: number; // 12
+  current: number;
+  total: number;
 }
 
 export interface Entry {
   id?: number;
-  date: string; // ISO yyyy-mm-dd — the actual purchase date
-  billingMonth?: string; // yyyy-MM — which budget month this belongs to (overrides date for filtering)
-  description: string; // raw text from the source
-  amountCents: number; // ALWAYS positive; direction carries the sign
+  date: string;           // ISO yyyy-mm-dd — actual purchase date
+  billingMonth?: string;  // yyyy-MM — which budget month this belongs to
+  description: string;
+  amountCents: number;    // ALWAYS positive; direction carries the sign
   direction: Direction;
-  category: string; // category name, or "Uncategorized"
+  category: string;
   accountId?: number;
   installment?: Installment;
   source: Source;
-  importedAt: string; // ISO timestamp
-  hash: string; // dedupe key (date + amount + description + account)
+  importedAt: string;     // ISO timestamp
+  hash: string;           // dedupe key
 }
 
-/** Learned mapping that makes categorization more automatic over time. */
 export interface MerchantRule {
   merchant: string; // normalized key (primary key)
   category: string;
+}
+
+/** Stores the statement balance (LEDGERBAL) from each OFX import per account/month. */
+export interface InvoiceStatement {
+  id?: number;
+  accountId: number;
+  month: string;          // yyyy-MM — billing month this statement covers
+  balanceCents: number;   // absolute value of LEDGERBAL (what is owed)
+  importedAt: string;
+}
+
+/** A recurring income or fixed expense that pre-fills every future month. */
+export interface RecurringItem {
+  id?: number;
+  direction: "income" | "expense";
+  description: string;
+  amountCents: number;
+  category: string;
+  dayOfMonth?: number;  // day it's expected (e.g. 5 for salary on the 5th)
+  activeFrom: string;   // yyyy-MM — first month this applies
+  activeTo?: string;    // yyyy-MM — last month (undefined = indefinite)
 }
 
 class FinLivreDB extends Dexie {
@@ -57,15 +78,26 @@ class FinLivreDB extends Dexie {
   accounts!: Table<Account, number>;
   categories!: Table<Category, number>;
   merchantRules!: Table<MerchantRule, string>;
+  invoiceStatements!: Table<InvoiceStatement, number>;
+  recurringItems!: Table<RecurringItem, number>;
 
   constructor() {
     super("finlivre");
-    // Listed fields after the primary key are INDEXES (what you can .where() on).
     this.version(1).stores({
       entries: "++id, date, category, direction, accountId, hash",
       accounts: "++id, name",
       categories: "++id, name",
       merchantRules: "merchant",
+    });
+    // v2: adds invoiceStatements + recurringItems; extends Account with color/closingDay
+    // (Dexie only needs the new/changed indexes here — existing field additions are automatic)
+    this.version(2).stores({
+      entries: "++id, date, category, direction, accountId, hash",
+      accounts: "++id, name",
+      categories: "++id, name",
+      merchantRules: "merchant",
+      invoiceStatements: "++id, accountId, month, [accountId+month]",
+      recurringItems: "++id, direction",
     });
   }
 }

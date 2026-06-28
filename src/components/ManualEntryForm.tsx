@@ -15,6 +15,7 @@ const EMPTY = {
   amount: '',
   direction: 'expense' as 'income' | 'expense',
   category: '',
+  accountId: '' as string | number,
 };
 
 export function ManualEntryForm() {
@@ -22,10 +23,11 @@ export function ManualEntryForm() {
   const [fields, setFields] = useState(EMPTY);
   const [error, setError] = useState('');
 
-  // Unique category names from existing entries — drives the <datalist>
   const categories = useLiveQuery(() =>
     db.entries.orderBy('category').uniqueKeys() as Promise<string[]>
   , [], []);
+
+  const accounts = useLiveQuery(() => db.accounts.toArray(), [], []);
 
   function set(key: keyof typeof EMPTY, value: string) {
     setFields(prev => ({ ...prev, [key]: value }));
@@ -51,6 +53,7 @@ export function ManualEntryForm() {
       amountCents,
       direction: fields.direction,
       category: fields.category.trim(),
+      accountId: fields.accountId !== '' ? Number(fields.accountId) : undefined,
     });
 
     dialogRef.current?.close();
@@ -68,7 +71,7 @@ export function ManualEntryForm() {
       {/* HTML native modal — no library needed */}
       <dialog
         ref={dialogRef}
-        className="rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 p-6 w-full max-w-md shadow-xl backdrop:bg-black/40"
+        className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 p-6 w-full max-w-md shadow-xl backdrop:bg-black/40"
       >
         <h2 className="text-base font-semibold text-zinc-900 dark:text-zinc-50 mb-5">Nova entrada</h2>
 
@@ -140,6 +143,22 @@ export function ManualEntryForm() {
               </datalist>
             </label>
           </div>
+
+          {accounts.length > 0 && (
+            <label className="flex flex-col gap-1">
+              <span className="text-xs text-zinc-500">Conta</span>
+              <select
+                value={String(fields.accountId)}
+                onChange={e => set('accountId', e.target.value)}
+                className={inputCls}
+              >
+                <option value="">Sem conta</option>
+                {accounts.map(acc => (
+                  <option key={acc.id} value={acc.id}>{acc.name}</option>
+                ))}
+              </select>
+            </label>
+          )}
 
           {error && <p className="text-xs text-red-500">{error}</p>}
 

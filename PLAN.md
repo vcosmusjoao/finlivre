@@ -108,7 +108,17 @@ backup button, because clearing browser data wipes IndexedDB.
 - MCP server so Claude Desktop can categorize a statement and save a report.
 - Supabase + auth + multi-device sync.
 - PDF importers per bank. CSV importers per bank.
+- **Open Finance integration (v2 flagship):** connect all Brazilian banks in one click via
+  Pluggy or Belvo (aggregators that use Banco Central's Open Finance). Requires: backend
+  (OAuth tokens can't live in the browser), Supabase for auth + token storage, paid API plan.
+  This is the natural evolution after the local-first MVP proves the product concept.
+  Story: "built local-first for privacy and learning; added Open Finance when the use-case
+  justified a backend." Strong architecture narrative for international interviews.
 - Local LLM (Ollama) for true offline parsing.
+- **"Todos" multi-dashboard view:** when no month is selected, replace the single dashboard
+  with multiple panels: spending by category (donut), spending by account (bar), income vs
+  expense over time (multi-month bar), and a full transaction table. Turns the "all months"
+  view into a real financial overview instead of just a merged table.
 - Budget-based category system (Custos fixos / Conforto / Prazeres / Metas style, à la 50/30/20).
   Merchant categories (Food, Transport) would become subcategories under budget categories.
   Higher planning power but more user setup upfront — revisit in M2.

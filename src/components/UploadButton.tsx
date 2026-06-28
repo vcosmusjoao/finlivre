@@ -1,22 +1,24 @@
 'use client';
 
 import { useState } from 'react';
-import { importOfx } from '@/lib/import-pipeline';
+import { importOfx, importSampleData } from '@/lib/import-pipeline';
+import { AccountPickerModal } from '@/components/AccountPickerModal';
 
 export function UploadButton() {
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<{ added: number; skipped: number } | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [pendingText, setPendingText] = useState<string | null>(null);
 
-  async function runImport(text: string) {
+  async function runImport(text: string, accountId?: number) {
     setLoading(true);
     setResult(null);
     setError(null);
     try {
-      const res = await importOfx(text);
+      const res = await importOfx(text, accountId);
       setResult(res);
     } catch {
-      setError("Erro ao importar o arquivo.");
+      setError('Erro ao importar o arquivo.');
     } finally {
       setLoading(false);
     }
@@ -25,13 +27,39 @@ export function UploadButton() {
   async function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (!file) return;
-    runImport(await file.text());
+    // Reset input so the same file can be re-selected after cancel
+    e.target.value = '';
+    setPendingText(await file.text());
   }
 
   async function handleLoadSample() {
-    const res = await fetch('/sample.ofx');
-    const text = await res.text();
-    runImport(text);
+    setLoading(true);
+    setResult(null);
+    setError(null);
+    try {
+      const res = await importSampleData();
+      setResult(res);
+    } catch {
+      setError('Erro ao carregar o exemplo.');
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  function handleAccountPicked(accountId: number) {
+    const text = pendingText!;
+    setPendingText(null);
+    runImport(text, accountId);
+  }
+
+  function handleSkip() {
+    const text = pendingText!;
+    setPendingText(null);
+    runImport(text, undefined);
+  }
+
+  function handleCancel() {
+    setPendingText(null);
   }
 
   return (
@@ -57,6 +85,13 @@ export function UploadButton() {
         </p>
       )}
       {error && <p className="text-sm text-red-500">{error}</p>}
+
+      <AccountPickerModal
+        open={pendingText !== null}
+        onSelect={handleAccountPicked}
+        onSkip={handleSkip}
+        onCancel={handleCancel}
+      />
     </div>
   );
 }

@@ -1,10 +1,11 @@
 import { UploadButton } from "@/components/UploadButton";
-import { TransactionsTable } from "@/components/TransactionsTable";
-import { SpendingChart } from "@/components/SpendingChart";
 import { SummaryCards } from "@/components/SummaryCards";
 import { ManualEntryForm } from "@/components/ManualEntryForm";
-import { IncomeExpenseChart } from "@/components/IncomeExpenseChart";
 import { MonthSelector } from "@/components/MonthSelector";
+import { ClearDataButton } from "@/components/ClearDataButton";
+import { AccountsManager } from "@/components/AccountsManager";
+import { RecurringItemsManager } from "@/components/RecurringItemsManager";
+import { DashboardBody } from "@/components/DashboardBody";
 
 export default function Home() {
   return (
@@ -17,6 +18,9 @@ export default function Home() {
             <p className="text-zinc-400 text-xs">enfim livre.</p>
           </div>
           <div className="flex items-center gap-3">
+            <ClearDataButton />
+            <AccountsManager />
+            <RecurringItemsManager />
             <ManualEntryForm />
             <UploadButton />
           </div>
@@ -24,20 +28,7 @@ export default function Home() {
 
         <MonthSelector />
         <SummaryCards />
-
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
-          <div className="bg-white dark:bg-zinc-900 rounded-xl border border-zinc-200 dark:border-zinc-800 p-6 flex flex-col items-center">
-            <h2 className="text-sm font-medium text-zinc-500 dark:text-zinc-400 mb-4 self-start">Gastos por categoria</h2>
-            <SpendingChart />
-          </div>
-
-          <div className="lg:col-span-2 bg-white dark:bg-zinc-900 rounded-xl border border-zinc-200 dark:border-zinc-800 p-6">
-            <h2 className="text-sm font-medium text-zinc-500 dark:text-zinc-400 mb-4">Transações</h2>
-            <TransactionsTable />
-          </div>
-        </div>
-
-        <IncomeExpenseChart />
+        <DashboardBody />
 
       </div>
     </main>
