@@ -8,7 +8,7 @@ import type { Entry } from "../db";
  */
 export type ParsedEntry = Pick<
   Entry,
-  "date" | "description" | "amountCents" | "direction" | "installment"
+  "date" | "billingMonth" | "description" | "amountCents" | "direction" | "installment"
 > & { source: "ofx" };
 
 export interface Importer {
@@ -68,24 +68,44 @@ function detectInstallment(description: string): { current: number; total: numbe
 export const ofxImporter: Importer = {
   format: "ofx",
   parse(fileText: string): ParsedEntry[] {
-    const results : ParsedEntry[] = [];
-    const matches = fileText.matchAll(/<STMTTRN>([\s\S]*?)<\/STMTTRN>/gi);
-    for (const match of matches) {
-      const block= match[1];
-      const rawDate = getField(block, 'DTPOSTED'); 
-      const rawAmount = getField(block, 'TRNAMT');
-      const description =  getField(block, 'MEMO') || getField(block, 'NAME');
+    // <CCACCTFROM> signals a credit card statement. Positive amounts there are
+    // bill payments (money flowing into the card to settle debt), not real income.
+    const isCreditCard =
+      /<CCACCTFROM>/i.test(fileText) ||
+      /<ACCTTYPE>CREDITLINE/i.test(fileText);
 
-      const date = parseDate(rawDate);                        
+    // DTEND marks the end of the statement period — its month is the billing month
+    // for all transactions in this file, even those dated in the previous month.
+    // e.g. DTEND=20260628 → billingMonth='2026-06', so a purchase on 2026-05-29
+    // correctly lands in June's budget instead of May's.
+    const dtEndMatch = fileText.match(/<DTEND>(\d{8})/i);
+    const billingMonth = dtEndMatch
+      ? `${dtEndMatch[1].slice(0, 4)}-${dtEndMatch[1].slice(4, 6)}`
+      : undefined;
+
+    const results: ParsedEntry[] = [];
+    const matches = fileText.matchAll(/<STMTTRN>([\s\S]*?)<\/STMTTRN>/gi);
+
+    for (const match of matches) {
+      const block = match[1];
+      const rawDate = getField(block, 'DTPOSTED');
+      const rawAmount = getField(block, 'TRNAMT');
+      const description = getField(block, 'MEMO') || getField(block, 'NAME');
+
+      const date = parseDate(rawDate);
       const amount = parseFloat(rawAmount);
       const amountCents = Math.abs(Math.round(amount * 100));
-      const direction = amount < 0 ? "expense" : "income";
+      // On credit card statements, positive amounts are either bill payments
+      // ("Pagamento recebido") or refunds/chargebacks ("Estorno ...").
+      // Payments settle debt → transfer. Refunds return money → income.
+      const direction =
+        amount < 0 ? "expense"
+        : isCreditCard && /pagamento/i.test(description) ? "transfer"
+        : "income";
       const installment = detectInstallment(description);
 
-      results.push({ date, description, amountCents, direction,installment, source: 'ofx' });
+      results.push({ date, billingMonth, description, amountCents, direction, installment, source: 'ofx' });
     }
     return results;
   },
-
-
 };

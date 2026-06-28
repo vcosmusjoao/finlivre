@@ -1,6 +1,10 @@
 import { UploadButton } from "@/components/UploadButton";
 import { TransactionsTable } from "@/components/TransactionsTable";
 import { SpendingChart } from "@/components/SpendingChart";
+import { SummaryCards } from "@/components/SummaryCards";
+import { ManualEntryForm } from "@/components/ManualEntryForm";
+import { IncomeExpenseChart } from "@/components/IncomeExpenseChart";
+import { MonthSelector } from "@/components/MonthSelector";
 
 export default function Home() {
   return (
@@ -12,8 +16,14 @@ export default function Home() {
             <h1 className="text-xl font-semibold text-zinc-900 dark:text-zinc-50">FinLivre</h1>
             <p className="text-zinc-400 text-xs">enfim livre.</p>
           </div>
-          <UploadButton />
+          <div className="flex items-center gap-3">
+            <ManualEntryForm />
+            <UploadButton />
+          </div>
         </header>
+
+        <MonthSelector />
+        <SummaryCards />
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
           <div className="bg-white dark:bg-zinc-900 rounded-xl border border-zinc-200 dark:border-zinc-800 p-6 flex flex-col items-center">
@@ -26,6 +36,8 @@ export default function Home() {
             <TransactionsTable />
           </div>
         </div>
+
+        <IncomeExpenseChart />
 
       </div>
     </main>

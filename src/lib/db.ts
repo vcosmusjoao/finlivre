@@ -8,7 +8,7 @@ import Dexie, { type Table } from "dexie";
  * Reminder: money is stored as integer CENTS (amountCents), never floats.
  */
 
-export type Direction = "income" | "expense";
+export type Direction = "income" | "expense" | "transfer";
 export type Source = "ofx" | "csv" | "pdf" | "manual";
 export type AccountType = "credit_card" | "bank" | "cash" | "other";
 
@@ -33,7 +33,8 @@ export interface Installment {
 
 export interface Entry {
   id?: number;
-  date: string; // ISO yyyy-mm-dd
+  date: string; // ISO yyyy-mm-dd — the actual purchase date
+  billingMonth?: string; // yyyy-MM — which budget month this belongs to (overrides date for filtering)
   description: string; // raw text from the source
   amountCents: number; // ALWAYS positive; direction carries the sign
   direction: Direction;

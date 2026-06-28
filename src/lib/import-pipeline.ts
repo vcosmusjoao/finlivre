@@ -1,6 +1,27 @@
 import { ofxImporter, type ParsedEntry } from "./importers/ofx";
-import { db } from "./db";
+import { db, type Direction } from "./db";
 import { categorize } from "./categorize";
+
+export interface ManualEntryInput {
+  date: string;        // ISO yyyy-mm-dd
+  description: string;
+  amountCents: number; // always positive
+  direction: Direction;
+  category: string;
+}
+
+export async function addManualEntry(input: ManualEntryInput): Promise<void> {
+  const hash = `manual|${input.date}|${input.amountCents}|${input.description}`;
+  const exists = await db.entries.where('hash').equals(hash).count();
+  if (exists > 0) return;
+
+  await db.entries.add({
+    ...input,
+    source: 'manual',
+    importedAt: new Date().toISOString(),
+    hash,
+  });
+}
 
 export async function importOfx(fileText: string): Promise<{ added: number; skipped: number }> {
   const entries = ofxImporter.parse(fileText);

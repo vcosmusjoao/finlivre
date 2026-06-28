@@ -77,9 +77,29 @@ backup button, because clearing browser data wipes IndexedDB.
 - **Milestone 1 — ship.** OFX import → categorize → dedupe → store → table + spending-by-category
   chart + "Load sample statement" button. Deploy to Vercel. **(Build this first. See FIRST_SESSION.md.)**
 - **Milestone 2 — becomes a finance app.** Manual entries + income + accounts → income vs expense,
-  net cashflow. Small code, big perceived jump (model already supports it).
-- **Milestone 3 — the differentiator.** Recurring commitments + installment (parcelas) forecast:
-  "what's locked in over the next 6 months."
+  net cashflow. Month filter (tab navigation). `direction: 'transfer'` for credit card bill
+  payments (excluded from income/expense totals).
+- **Milestone 3 — the differentiator.** Month-by-month planning with billing cycles and recurring data:
+  - **`billingMonth` field on Entry:** separates "when the purchase happened" from "which
+    month's budget it belongs to". Fixes credit card billing cycle mismatch (e.g. Nubank closes
+    on the 5th — a purchase on Jul 4 belongs to June's budget, not July's). OFX import derives
+    billingMonth from `<DTEND>`; a confirmation dialog lets the user correct it. Account gets
+    a `closingDay?: number` field for automatic calculation.
+  - **Account management UI:** user registers each financial source (cards, bank accounts,
+    wallet). Each card has a `closingDay`. This is what makes the app a unified view of all
+    spending — credit cards, fixed bills, boletos, manual PIX, cash.
+  - **Recurring income:** user configures a base salary that appears in every future month
+    automatically, overridable per month (e.g. "this month I also got a freelance payment").
+  - **Fixed expenses (contas fixas):** recurring bills (rent, subscriptions, gym) pre-fill
+    every future month. User confirms or edits each month.
+  - **Installment forecast:** entries with `installment: { current, total }` are projected into
+    future months automatically ("R$ 388 locked in for the next 3 months from this purchase").
+  - **Month view (future months):** a future month tab shows projected totals (fixed expenses
+    + installment commitments + configured income) before any imports arrive — the "what do I
+    owe next month?" answer.
+  - **Invoice summary card:** when importing an OFX, read `<LEDGERBAL>` and store it with the
+    Account. Show "Fatura Junho: R$ 1.658,76 em compras · R$ 1.558,76 a pagar (R$ 100 já pagos)"
+    — distinct from total spending, which stays correct as the sum of purchases.
 - **Milestone 4+** — multiple cards unified, CSV then PDF importers, budgets per category,
   assets/net worth (the house).
 
