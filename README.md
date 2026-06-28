@@ -6,7 +6,9 @@ A local-first personal finance app. Import a bank or credit-card statement and F
 into a clear financial picture: spending by category, income vs expense, and upcoming installment
 commitments. Built to handle Brazilian credit-card statements, including installments (parcelas).
 
-> Status: in development. Milestone 1 (OFX import + dashboard) in progress.
+> **Live:** https://finlivre-1ck0g8iye-joao-costa.vercel.app/ — click "Carregar exemplo" to try it without uploading your own data.
+
+> Status: Milestone 1 shipped. Milestone 2 (manual entries + income vs expense) in progress.
 
 ## Why local-first
 
