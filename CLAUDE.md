@@ -53,9 +53,11 @@ Treat it as a learning project AND a portfolio piece.
 - **Pós-M6 (hotfixes):**
   - **Formato de data:** `lib/format.ts` ganhou `formatDate(yyyyMMdd)` (string split, sem `new Date` para
     evitar bug de timezone UTC). `TransactionsTable` exibe `16/06/2026` em vez de `2026-06-16`.
-- **Next: batch categorization** (mini-feature antes do M7) — multi-select na tabela + bulk assign
-  categoria + salva `MerchantRule` retroativamente. Ver `FIRST_SESSION.md`.
-- **M7** (após batch): decidir entre **categorias-mestre** (50/30/20, o desejo do João) ou
+- **Batch categorization ✅** — multi-select na tabela + bulk assign + `MerchantRule` retroativo.
+  Checkboxes sempre visíveis, action bar flutuante (dark pill), dialog de confirmação retroativa.
+  `TransactionsTable` agora inclui título dinâmico ("Lançamentos de jun/26") + contador.
+- **Next: M7** — decidir entre **categorias-mestre** ou **Split/Cobranças**. Ver `PLAN.md §10`.
+- **M7**: decidir entre **categorias-mestre** (50/30/20, o desejo do João) ou
   **Split/empréstimos** (modelo de dados a decidir). Ver `PLAN.md §10`.
 
 ## Working style (important)
