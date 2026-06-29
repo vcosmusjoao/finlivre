@@ -73,35 +73,43 @@ no network calls for parsing at all (deterministic, in-browser). Add an "Export 
 backup button, because clearing browser data wipes IndexedDB.
 
 ## 9. Milestones
-- **Layer 0 — model.** `Entry`/`Account`/`Category`/`MerchantRule` in Dexie. ✅ scaffolded in `src/lib/db.ts`.
-- **Milestone 1 — ship.** OFX import → categorize → dedupe → store → table + spending-by-category
-  chart + "Load sample statement" button. Deploy to Vercel. **(Build this first. See FIRST_SESSION.md.)**
-- **Milestone 2 — becomes a finance app.** Manual entries + income + accounts → income vs expense,
-  net cashflow. Month filter (tab navigation). `direction: 'transfer'` for credit card bill
-  payments (excluded from income/expense totals).
-- **Milestone 3 — the differentiator.** Month-by-month planning with billing cycles and recurring data:
-  - **`billingMonth` field on Entry:** separates "when the purchase happened" from "which
-    month's budget it belongs to". Fixes credit card billing cycle mismatch (e.g. Nubank closes
-    on the 5th — a purchase on Jul 4 belongs to June's budget, not July's). OFX import derives
-    billingMonth from `<DTEND>`; a confirmation dialog lets the user correct it. Account gets
-    a `closingDay?: number` field for automatic calculation.
-  - **Account management UI:** user registers each financial source (cards, bank accounts,
-    wallet). Each card has a `closingDay`. This is what makes the app a unified view of all
-    spending — credit cards, fixed bills, boletos, manual PIX, cash.
-  - **Recurring income:** user configures a base salary that appears in every future month
-    automatically, overridable per month (e.g. "this month I also got a freelance payment").
-  - **Fixed expenses (contas fixas):** recurring bills (rent, subscriptions, gym) pre-fill
-    every future month. User confirms or edits each month.
-  - **Installment forecast:** entries with `installment: { current, total }` are projected into
-    future months automatically ("R$ 388 locked in for the next 3 months from this purchase").
-  - **Month view (future months):** a future month tab shows projected totals (fixed expenses
-    + installment commitments + configured income) before any imports arrive — the "what do I
-    owe next month?" answer.
-  - **Invoice summary card:** when importing an OFX, read `<LEDGERBAL>` and store it with the
-    Account. Show "Fatura Junho: R$ 1.658,76 em compras · R$ 1.558,76 a pagar (R$ 100 já pagos)"
-    — distinct from total spending, which stays correct as the sum of purchases.
-- **Milestone 4+** — multiple cards unified, CSV then PDF importers, budgets per category,
-  assets/net worth (the house).
+
+- **Layer 0 — model.** ✅ `Entry`/`Account`/`Category`/`MerchantRule` in Dexie.
+
+- **Milestone 1 — ship.** ✅ OFX import → categorize → dedupe → store → table +
+  spending-by-category chart + "Load sample" button. Deployed to Vercel.
+
+- **Milestone 2 — becomes a finance app.** ✅ Manual entries + income + `direction: 'transfer'`
+  for credit card payments. Month filter tabs. `billingMonth` separates purchase date from
+  budget month. Income vs expense bar chart.
+
+- **Milestone 3 — the differentiator.** ✅ Committed `e3eef79` on 2026-06-28.
+  - ✅ **Account management:** color-coded cards (Nubank purple, Inter orange, custom presets),
+    CRUD modal, account picker on OFX import, color dot per transaction row.
+  - ✅ **Recurring items:** `RecurringItemsManager` for fixed income/expenses (salary, rent,
+    subscriptions). Pre-fills future month projections. `activeFrom` defaults to next month.
+  - ✅ **Installment forecast:** `getProjectedMonth()` computes future months on-the-fly from
+    `RecurringItems` + `installment` math — never materialized in DB. `ProjectedView` shows
+    `fixo` and `X/Y` badges.
+  - ✅ **Future month tabs:** dashed border, distinct from real-data tabs. `DashboardBody`
+    branches — future months show projection + manual entries side by side.
+  - ✅ **Inline category editing:** click any chip → inline input + datalist autocomplete →
+    saves `MerchantRule` for future auto-categorization ("merchant dictionary").
+  - ✅ **Data hygiene:** delete per row, clear-all with confirmation, resets month selection.
+  - ✅ **Month selector fix:** past months (≤ today) and future months are distinct sets.
+  - ⏳ **Invoice summary card:** `LEDGERBAL` is already extracted and stored in
+    `InvoiceStatement` table, but no UI shows it yet. Show "Fatura Junho: R$ 1.658,76 em
+    compras · R$ 100 já pagos" per account. Move to M4 opening task.
+
+- **Milestone 4 — depth and polish.**
+  - Invoice summary card (carry-over from M3).
+  - Unit tests: Jest setup + tests for `format.ts`, OFX parser, `getProjectedMonth` logic.
+  - Export to JSON/CSV (privacy/backup — referenced in §8).
+  - "Todos" multi-dashboard: donut by category, bar by account, multi-month income vs expense.
+  - Budget categories (Custos fixos / Conforto / Prazeres / Metas — 50/30/20 style).
+  - Multiple OFX files for different cards in a single unified view.
+  - PDF importer (Inter bank, one bank at a time).
+  - Assets/net worth panel (the house, investments).
 
 ## 10. Parked ideas (v2+ — do not build during M1)
 - AI fallback for low-confidence lines / unknown merchants (optional toggle).
@@ -129,6 +137,20 @@ backup button, because clearing browser data wipes IndexedDB.
   "this month's bill" grouping and the installment forecast of M3.
 - Transaction color-coding by account in the table: when multiple accounts exist, each row
   gets a color accent matching the account. Small UI lift, big clarity gain.
+- **PDF import via AI (M5):** upload a bank statement PDF → extract text (pdf.js) → send to
+  Claude API → receive structured JSON of transactions → editable review table → import to DB.
+  Requires an Anthropic API key (can live in localStorage as a user setting) and an optional
+  thin backend if the key can't be exposed client-side. Strong portfolio differentiator — most
+  personal finance apps don't do this. Implement one bank at a time (starting with Inter/Nubank).
+- **Empréstimos e divisões (M5):** track money lent to people and shared expenses.
+  Two sub-features: (1) Split — mark that part of a credit card purchase belongs to someone
+  else (e.g., 50% Gabi), which halves your effective amountCents in all totals. Requires
+  a `splits` table `{ entryId, personName, amountCents, dueDate? }` and a recalculation
+  pass in SummaryCards/SpendingChart. (2) Cobranças — list of pending amounts owed to you,
+  with optional `phone` field. "Lembrar" button generates a `wa.me/{phone}?text=...` deep
+  link that opens WhatsApp with a pre-filled message — fully local-first, no backend.
+  Architectural note: split logic touches every total in the app; design the data model
+  carefully before implementing.
 
 ## 11. UI prototype (optional, before coding the dashboard)
 Decide the *look* fast with a static mockup, then build it by hand to learn. Paste this into a

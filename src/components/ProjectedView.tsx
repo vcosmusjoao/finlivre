@@ -7,7 +7,7 @@ import { formatBRL } from '@/lib/format';
 import { getProjectedMonth, type ProjectedItem } from '@/lib/projection';
 import { useMonth } from '@/context/MonthContext';
 
-export function ProjectedView() {
+export function ProjectedView({ hideWhenEmpty = false }: { hideWhenEmpty?: boolean }) {
   const { selectedMonth } = useMonth();
 
   const projection = useLiveQuery(
@@ -27,6 +27,7 @@ export function ProjectedView() {
   const expense = projection.items.filter(i => i.direction === 'expense');
 
   if (projection.items.length === 0) {
+    if (hideWhenEmpty) return null;
     return (
       <div className="text-center py-10 text-zinc-400 text-sm">
         <p className="text-2xl mb-2">🎉</p>

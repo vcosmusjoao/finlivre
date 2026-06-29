@@ -1,47 +1,61 @@
-# Start here — next session
+# Start here — next session (M5 planning)
 
-Open this folder (`C:\dev\finlivre`) in Claude Code and work top to bottom. Goal of the session:
-**ship Milestone 1.** Don't add anything outside it (see PLAN.md §3 and §10).
+Open this folder (`C:\dev\finlivre`) in Claude Code.
+M1, M2, M3, M4 complete. Start session by reading PLAN.md §10 (parked ideas) and discussing M5 scope.
 
-## 0. Orient (5 min)
-- Read `PLAN.md` (§4 architecture, §5 data model, §9 milestones).
-- Skim `docs/nextjs-notes.md` (Server vs Client Components, `useLiveQuery`, Recharts).
+## 0. Orient (2 min)
+- Read `PLAN.md §9` (milestone status) and `§10` (parked ideas).
+- Check `CLAUDE.md` for current state and gotchas.
 
-## 1. Confirm the app runs
-```
-npm run dev
-```
-Open http://localhost:3000 — you should see the default Next page. (Tailwind v4 + Turbopack are on.)
+## 1. M4 task list (work top to bottom)
 
-## 2. The Milestone 1 build order
-The foundation already exists: `src/lib/db.ts` (Dexie schema), `src/lib/categorize.ts`
-(merchant dictionary), `src/lib/importers/ofx.ts` (stub with a guided TODO).
+### 1a. Invoice summary card ✅ DONE
+- `src/components/InvoiceCards.tsx` — shows LEDGERBAL per account per month.
+- Inserted between SummaryCards and DashboardBody in `page.tsx`.
+- Shows "R$ X,XX a pagar". No "já pagos" calc (LEDGERBAL is already net).
 
-1. **Implement the OFX importer** — `src/lib/importers/ofx.ts`. The TODO walks you through the
-   `<STMTTRN>` format. Test it against a **real Nubank `.ofx`** (export one from the Nubank app).
-   This is your main learning exercise — try it before asking for the solution.
-2. **Build the import pipeline** — a function that does: `parse → categorize → hash/dedupe →
-   db.entries.bulkAdd`. Put it in `src/lib/import-pipeline.ts`.
-3. **Upload component** (`'use client'`) — a file input that reads the file as text and runs the
-   pipeline. Browser-only, so it must be a Client Component.
-4. **Transactions table** — read with `useLiveQuery(() => db.entries.orderBy('date').reverse().toArray())`
-   so it auto-updates when data changes (this is your RxJS-like reactive binding).
-5. **Spending-by-category chart** — Recharts `PieChart`/`BarChart`, fed by a grouping of entries.
-6. **Compose the dashboard** in `src/app/page.tsx` (replace the default content).
-7. **"Load sample statement" button** — bundle `public/sample.ofx` (anonymized) so recruiters
-   (and you) can see it work with one click, no real data, no cost.
+### 1b. Unit tests ✅ DONE
+- Jest already configured. `fake-indexeddb` already installed.
+- **40 tests passing** across 5 suites.
+- New test files: `format.test.ts`, `accounts.test.ts`, `projection.test.ts`
+- `stripInstallmentText` exported from `projection.ts` (was private).
 
-## 3. Definition of done for Milestone 1
-Upload a real OFX **or** click "Load sample" → see a categorized transactions table + a
-spending-by-category chart → reload the page and the data is still there (IndexedDB).
+### 1c. Export to JSON/CSV ✅ DONE
+- `src/components/ExportButton.tsx` — dropdown with JSON (full backup) and CSV (spreadsheet).
+- JSON: all tables (entries, accounts, recurringItems, merchantRules, invoiceStatements).
+- CSV: entries only, account name resolved, UTF-8 BOM for Excel.
+- Button placed in header between "Limpar dados" and "Contas".
 
-## 4. Then deploy
-```
-git add -A && git commit -m "Milestone 1: OFX import + dashboard"
-```
-Push to GitHub, import the repo in Vercel, deploy. Add the live URL to the README.
+### Bugs fixed this session
+- SpendingChart: replaced hardcoded `width={400}` with `ResponsiveContainer` + custom JSX legend.
+- InvoiceCards: removed incorrect "já pagos" logic (LEDGERBAL is net, not gross).
+- Recurring items: current month now gets projection in SummaryCards (`hasProjection = selectedMonth >= now`).
+- DashboardBody: current month now shows "Previstos para este mês" card with `ProjectedView hideWhenEmpty`.
+- RecurringItemsManager: `cancelEdit()` was resetting `activeFrom` to current month instead of next month.
 
-## Reminders
-- Money is integer **cents** everywhere.
-- Anything touching Dexie = Client Component (`'use client'`).
-- New idea? → PLAN.md §10 "Parked". Finish M1 first.
+### 1d. "Todos" multi-dashboard ✅ DONE
+When `selectedMonth === ''`, DashboardBody renders `<AllTimeDashboard />`:
+- Donut: gastos por categoria (`SpendingChart` — já filtrava corretamente por selectedMonth)
+- Bar horizontal: gastos por conta (`SpendingByAccountChart.tsx` — novo)
+- IncomeExpenseChart: income vs expense all-time
+- `TransactionsTable`: todas as transações
+- `SummaryCards`: oculto no modo "Todos" (`if (!selectedMonth) return null`)
+
+### 1e. Parcelamento no formulário manual ⏳ NEXT
+Adicionar campo `installments` (number, default 1) no `ManualEntryForm`.
+Quando > 1: criar N entradas espaçadas mês a mês, cada uma com `amountCents / N`,
+descrição `"Compra (1/N)"`, `"Compra (2/N)"`, etc. Só aparece quando `direction === 'expense'`.
+Reutiliza a estrutura `installment: { current, total }` já existente na Entry.
+
+### 1f. (Stretch) Budget categories
+50/30/20 style: Custos fixos / Conforto / Prazeres / Metas.
+Requires thinking through UX before coding — discuss before implementing.
+
+## 2. Reminders
+- Money is always integer **cents** (`amountCents`).
+- Dexie = Client Component (`'use client'`).
+- All `<dialog>` modals need `fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2`.
+- Future projections are on-the-fly (`getProjectedMonth`) — never write projected data to DB.
+- New idea? → PLAN.md §10 "Parked". Ask: "does this block M4?" If not → park it.
+- Tests: run `npm test` — must stay green before any commit.
+- useLiveQuery with array default: always use `[] as MyType[]`, not bare `[]`.

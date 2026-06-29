@@ -16,7 +16,14 @@ const EMPTY = {
   direction: 'expense' as 'income' | 'expense',
   category: '',
   accountId: '' as string | number,
+  installments: '1',
 };
+
+function addMonthsToDate(dateStr: string, n: number): string {
+  const [year, month, day] = dateStr.split('-').map(Number);
+  const d = new Date(year, month - 1 + n, day);
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}
 
 export function ManualEntryForm() {
   const dialogRef = useRef<HTMLDialogElement>(null);
@@ -42,19 +49,41 @@ export function ManualEntryForm() {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     const amountCents = Math.round(parseFloat(fields.amount.replace(',', '.')) * 100);
+    const n = Math.max(1, parseInt(fields.installments, 10) || 1);
 
     if (!fields.description.trim()) return setError('Descrição obrigatória.');
     if (isNaN(amountCents) || amountCents <= 0) return setError('Valor inválido.');
     if (!fields.category.trim()) return setError('Categoria obrigatória.');
 
-    await addManualEntry({
-      date: fields.date,
-      description: fields.description.trim(),
-      amountCents,
-      direction: fields.direction,
-      category: fields.category.trim(),
-      accountId: fields.accountId !== '' ? Number(fields.accountId) : undefined,
-    });
+    const desc = fields.description.trim();
+    const accountId = fields.accountId !== '' ? Number(fields.accountId) : undefined;
+
+    if (n === 1 || fields.direction === 'income') {
+      await addManualEntry({
+        date: fields.date,
+        description: desc,
+        amountCents,
+        direction: fields.direction,
+        category: fields.category.trim(),
+        accountId,
+      });
+    } else {
+      const perInstallment = Math.floor(amountCents / n);
+      const timestamp = Date.now();
+      const entries = Array.from({ length: n }, (_, i) => ({
+        date: addMonthsToDate(fields.date, i),
+        description: `${desc} (${i + 1}/${n})`,
+        amountCents: i === n - 1 ? amountCents - perInstallment * (n - 1) : perInstallment,
+        direction: 'expense' as const,
+        category: fields.category.trim(),
+        accountId,
+        installment: { current: i + 1, total: n },
+        source: 'manual' as const,
+        importedAt: new Date().toISOString(),
+        hash: `manual-installment|${timestamp}|${i}|${desc}`,
+      }));
+      await db.entries.bulkAdd(entries);
+    }
 
     dialogRef.current?.close();
   }
@@ -143,6 +172,27 @@ export function ManualEntryForm() {
               </datalist>
             </label>
           </div>
+
+          {fields.direction === 'expense' && (
+            <div className="flex flex-col gap-1">
+              <label className="flex items-center justify-between">
+                <span className="text-xs text-zinc-500">Parcelas</span>
+                {parseInt(fields.installments) > 1 && !isNaN(parseFloat(fields.amount.replace(',', '.'))) && (
+                  <span className="text-xs text-zinc-400">
+                    {fields.installments}x de R$ {(Math.floor(Math.round(parseFloat(fields.amount.replace(',', '.')) * 100) / parseInt(fields.installments)) / 100).toFixed(2)}
+                  </span>
+                )}
+              </label>
+              <input
+                type="number"
+                min={1}
+                max={36}
+                value={fields.installments}
+                onChange={e => set('installments', e.target.value)}
+                className={inputCls}
+              />
+            </div>
+          )}
 
           {accounts.length > 0 && (
             <label className="flex flex-col gap-1">

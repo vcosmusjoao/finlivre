@@ -6,6 +6,8 @@ import { ClearDataButton } from "@/components/ClearDataButton";
 import { AccountsManager } from "@/components/AccountsManager";
 import { RecurringItemsManager } from "@/components/RecurringItemsManager";
 import { DashboardBody } from "@/components/DashboardBody";
+import { InvoiceCards } from "@/components/InvoiceCards";
+import { ExportButton } from "@/components/ExportButton";
 
 export default function Home() {
   return (
@@ -19,6 +21,7 @@ export default function Home() {
           </div>
           <div className="flex items-center gap-3">
             <ClearDataButton />
+            <ExportButton />
             <AccountsManager />
             <RecurringItemsManager />
             <ManualEntryForm />
@@ -28,6 +31,7 @@ export default function Home() {
 
         <MonthSelector />
         <SummaryCards />
+        <InvoiceCards />
         <DashboardBody />
 
       </div>

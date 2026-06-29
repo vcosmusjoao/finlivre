@@ -2,7 +2,7 @@ import { db } from './db';
 import { addMonths, monthDiff } from './format';
 
 /** Removes embedded installment text from OFX descriptions so the badge is the single source of truth. */
-function stripInstallmentText(description: string): string {
+export function stripInstallmentText(description: string): string {
   return description
     .replace(/\s*[-–]?\s*Parcela\s+\d+\/\d+/gi, '') // "Parcela 8/12", "- Parcela 8/12"
     .replace(/\s*[-–]\s*\d+\/\d+\s*$/i, '')          // "- 1/3" at end

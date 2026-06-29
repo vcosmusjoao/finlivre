@@ -8,9 +8,13 @@ import { getProjectedMonth } from '@/lib/projection';
 
 export function SummaryCards() {
   const { selectedMonth } = useMonth();
-  const isFuture = !!selectedMonth && selectedMonth > currentMonth();
+  const now = currentMonth();
+  const isFuture = !!selectedMonth && selectedMonth > now;
+  // Current month also gets projection so recurring items set from this month are visible.
+  // Risk accepted: same double-count risk that already exists for future months.
+  const hasProjection = !!selectedMonth && selectedMonth >= now;
 
-  // Real entries — past/current months use these directly; future months add them on top of projection
+  // Real entries — past/current months use these directly; current/future months add projection on top
   const income = useLiveQuery(() =>
     db.entries.where('direction').equals('income')
       .and(e => !selectedMonth || effectiveMonth(e) === selectedMonth)
@@ -25,16 +29,18 @@ export function SummaryCards() {
       .then(rows => rows.reduce((sum, e) => sum + e.amountCents, 0))
   , [selectedMonth], 0);
 
-  // Projected data — recurring + installment commitments for future months
+  // Projected data — recurring + installment commitments for current and future months
   const projection = useLiveQuery(
-    () => isFuture && selectedMonth ? getProjectedMonth(selectedMonth) : Promise.resolve(null),
-    [selectedMonth, isFuture]
+    () => hasProjection && selectedMonth ? getProjectedMonth(selectedMonth) : Promise.resolve(null),
+    [selectedMonth, hasProjection]
   );
 
-  // For future months: real entries (manual) + projected items (recurring/installments)
-  const displayIncome  = isFuture ? income + (projection?.totalIncomeCents  ?? 0) : income;
-  const displayExpense = isFuture ? expense + (projection?.totalExpenseCents ?? 0) : expense;
+  // Current/future months: real entries + projected items (recurring/installments)
+  const displayIncome  = hasProjection ? income + (projection?.totalIncomeCents  ?? 0) : income;
+  const displayExpense = hasProjection ? expense + (projection?.totalExpenseCents ?? 0) : expense;
   const net = displayIncome - displayExpense;
+
+  if (!selectedMonth) return null;
 
   return (
     <div className="mb-6">

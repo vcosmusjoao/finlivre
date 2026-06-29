@@ -6,10 +6,17 @@ import { SpendingChart } from '@/components/SpendingChart';
 import { TransactionsTable } from '@/components/TransactionsTable';
 import { IncomeExpenseChart } from '@/components/IncomeExpenseChart';
 import { ProjectedView } from '@/components/ProjectedView';
+import { AllTimeDashboard } from '@/components/AllTimeDashboard';
 
 export function DashboardBody() {
   const { selectedMonth } = useMonth();
-  const isFuture = !!selectedMonth && selectedMonth > currentMonth();
+  const now = currentMonth();
+  const isFuture = !!selectedMonth && selectedMonth > now;
+  const isCurrentMonth = !!selectedMonth && selectedMonth === now;
+
+  if (!selectedMonth) {
+    return <AllTimeDashboard />;
+  }
 
   if (isFuture) {
     return (
@@ -46,6 +53,14 @@ export function DashboardBody() {
           <TransactionsTable />
         </div>
       </div>
+
+      {isCurrentMonth && (
+        <div className="bg-white dark:bg-zinc-900 rounded-xl border border-zinc-200 dark:border-zinc-800 p-6 mb-6">
+          <h2 className="text-sm font-medium text-zinc-500 dark:text-zinc-400 mb-4">Previstos para este mês</h2>
+          <ProjectedView hideWhenEmpty />
+        </div>
+      )}
+
       <IncomeExpenseChart />
     </>
   );

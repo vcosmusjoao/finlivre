@@ -54,7 +54,7 @@ export function RecurringItemsManager() {
   }
 
   function cancelEdit() {
-    setForm({ ...EMPTY_FORM, activeFrom: currentMonth() });
+    setForm({ ...EMPTY_FORM, activeFrom: addMonths(currentMonth(), 1) });
     setEditingId(null);
     setError('');
   }
