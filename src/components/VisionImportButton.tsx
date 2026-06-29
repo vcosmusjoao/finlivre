@@ -10,6 +10,7 @@ import { getApiKey } from '@/lib/settings';
 import { useMonth } from '@/context/MonthContext';
 import { currentMonth } from '@/lib/format';
 import { ApiKeySettings } from './ApiKeySettings';
+import { AccountPickerModal } from './AccountPickerModal';
 import type { ParsedEntry } from '@/lib/importers/ofx';
 
 interface ReviewRow {
@@ -19,6 +20,13 @@ interface ReviewRow {
   direction: 'expense' | 'income';
   category: string;
   installment?: { current: number; total: number };
+}
+
+interface PendingAnalysis {
+  entries: ParsedEntry[];
+  invoiceTotalCents: number | null;
+  billingMonth: string;
+  fromCache: boolean;
 }
 
 function today() {
@@ -43,11 +51,14 @@ export function VisionImportButton() {
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<{ added: number; skipped: number } | null>(null);
 
+  // Holds the AI result between analysis and account picking
+  const [pendingAnalysis, setPendingAnalysis] = useState<PendingAnalysis | null>(null);
+
   const [rows, setRows] = useState<ReviewRow[] | null>(null);
   const [billingMonth, setBillingMonth] = useState(currentMonth());
   const [accountId, setAccountId] = useState('');
-
   const [invoiceTotal, setInvoiceTotal] = useState('');
+  const [fromCache, setFromCache] = useState(false);
 
   const [showKey, setShowKey] = useState(false);
   const [pendingFiles, setPendingFiles] = useState<File[] | null>(null);
@@ -55,6 +66,7 @@ export function VisionImportButton() {
   function resetModal() {
     setRows(null);
     setInvoiceTotal('');
+    setAccountId('');
   }
 
   const categories = useLiveQuery(
@@ -71,7 +83,7 @@ export function VisionImportButton() {
 
   async function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
     const files = Array.from(e.target.files ?? []);
-    e.target.value = ''; // allow re-selecting the same file
+    e.target.value = '';
     if (files.length === 0) return;
     if (!getApiKey()) {
       setPendingFiles(files);
@@ -91,30 +103,45 @@ export function VisionImportButton() {
       );
       const bm = selectedMonth || currentMonth();
       const parsed = await parseStatement(visionFiles, getApiKey()!, bm);
-      if (parsed.length === 0) {
+      if (parsed.entries.length === 0) {
         setError('Nenhuma transação encontrada na imagem/PDF.');
         return;
       }
-      // Pre-fill categories with the existing categorizer so the user sees suggestions.
-      const cats = await Promise.all(parsed.map(p => categorize(p.description)));
-      setBillingMonth(bm);
-      setAccountId('');
-      setRows(
-        parsed.map((p, i) => ({
-          date: p.date,
-          description: p.description,
-          amount: (p.amountCents / 100).toFixed(2).replace('.', ','),
-          direction: p.direction === 'income' ? 'income' : 'expense',
-          category: cats[i] === 'Uncategorized' ? '' : cats[i],
-          installment: p.installment,
-        })),
-      );
+      // Store analysis and open account picker before the review table
+      setPendingAnalysis({ entries: parsed.entries, invoiceTotalCents: parsed.invoiceTotalCents, billingMonth: bm, fromCache: parsed.fromCache });
     } catch (e) {
       if (e instanceof VisionRefusalError) setError(e.message);
       else setError('Erro ao analisar. Verifique a chave da API e a conexão.');
     } finally {
       setLoading(false);
     }
+  }
+
+  /** Called after account is picked (or skipped) — populates and opens the review table. */
+  async function openReviewTable(pickedAccountId?: number) {
+    if (!pendingAnalysis) return;
+    const { entries, invoiceTotalCents, billingMonth: bm, fromCache: cached } = pendingAnalysis;
+    setPendingAnalysis(null);
+    setFromCache(cached);
+
+    const cats = await Promise.all(entries.map(p => categorize(p.description)));
+    setBillingMonth(bm);
+    setAccountId(pickedAccountId !== undefined ? String(pickedAccountId) : '');
+    setInvoiceTotal(
+      invoiceTotalCents != null
+        ? (invoiceTotalCents / 100).toFixed(2).replace('.', ',')
+        : '',
+    );
+    setRows(
+      entries.map((p, i) => ({
+        date: p.date,
+        description: p.description,
+        amount: (p.amountCents / 100).toFixed(2).replace('.', ','),
+        direction: p.direction === 'income' ? 'income' : 'expense',
+        category: cats[i] === 'Uncategorized' ? '' : cats[i],
+        installment: p.installment,
+      })),
+    );
   }
 
   function updateRow(i: number, key: keyof ReviewRow, value: string) {
@@ -132,7 +159,7 @@ export function VisionImportButton() {
     const parsed: ParsedEntry[] = [];
     for (const r of current) {
       const cents = Math.round(parseFloat(r.amount.replace(',', '.')) * 100);
-      if (!r.description.trim() || isNaN(cents) || cents <= 0) continue; // skip invalid rows
+      if (!r.description.trim() || isNaN(cents) || cents <= 0) continue;
       parsed.push({
         date: r.date,
         billingMonth,
@@ -148,8 +175,6 @@ export function VisionImportButton() {
       resetModal();
       return;
     }
-    // Teach the merchant dictionary from the user-confirmed categories — this also
-    // benefits future OFX imports of the same merchant.
     await Promise.all(
       current.filter(r => r.category.trim() && r.description.trim())
         .map(r => learnRule(r.description.trim(), r.category.trim())),
@@ -157,7 +182,7 @@ export function VisionImportButton() {
     const acc = accountId !== '' ? Number(accountId) : undefined;
     const res = await commitParsedEntries(parsed, acc);
 
-    // Save invoice total as InvoiceStatement so the invoice card appears (same as OFX LEDGERBAL)
+    // Save invoice total as InvoiceStatement (same as OFX LEDGERBAL)
     if (invoiceTotal.trim() && acc !== undefined) {
       const totalCents = Math.round(parseFloat(invoiceTotal.replace(',', '.')) * 100);
       if (!isNaN(totalCents) && totalCents > 0) {
@@ -181,15 +206,24 @@ export function VisionImportButton() {
 
   return (
     <div className="inline-flex flex-col gap-2">
-      <label className="cursor-pointer inline-flex items-center gap-2 rounded-lg border border-zinc-200 dark:border-zinc-700 px-4 py-2 text-sm font-medium text-zinc-800 dark:text-zinc-200 hover:border-zinc-400 transition-colors">
+      <label className={`cursor-pointer inline-flex items-center gap-2 rounded-lg border px-4 py-2 text-sm font-medium transition-colors ${loading ? 'border-indigo-300 dark:border-indigo-700 text-indigo-600 dark:text-indigo-400 cursor-wait' : 'border-zinc-200 dark:border-zinc-700 text-zinc-800 dark:text-zinc-200 hover:border-zinc-400'}`}>
         <input
           type="file"
           accept="image/*,application/pdf"
           multiple
           className="sr-only"
+          disabled={loading}
           onChange={handleFileChange}
         />
-        {loading ? 'Analisando com IA…' : 'Importar foto/PDF'}
+        {loading ? (
+          <>
+            <svg className="animate-spin h-4 w-4 shrink-0" viewBox="0 0 24 24" fill="none">
+              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+            </svg>
+            Analisando com IA…
+          </>
+        ) : 'Importar foto/PDF'}
       </label>
 
       {result && (
@@ -210,15 +244,30 @@ export function VisionImportButton() {
         }}
       />
 
-      {/* Review modal — the user verifies/edits before anything is saved */}
+      {/* Step 2 of the flow: pick (or create) the account after AI analysis */}
+      <AccountPickerModal
+        open={pendingAnalysis !== null}
+        onSelect={id => openReviewTable(id)}
+        onSkip={() => openReviewTable(undefined)}
+        onCancel={() => setPendingAnalysis(null)}
+      />
+
+      {/* Step 3: review table — user verifies/edits before anything is saved */}
       <dialog
         ref={dialogRef}
         onCancel={() => resetModal()}
         className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 p-6 w-full max-w-4xl shadow-xl backdrop:bg-black/40"
       >
-        <h2 className="text-base font-semibold text-zinc-900 dark:text-zinc-50 mb-1">
-          Revisar transações
-        </h2>
+        <div className="flex items-center gap-3 mb-1">
+          <h2 className="text-base font-semibold text-zinc-900 dark:text-zinc-50">
+            Revisar transações
+          </h2>
+          {fromCache && (
+            <span className="inline-flex items-center gap-1 text-[11px] font-medium text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/30 border border-amber-200 dark:border-amber-800 px-2 py-0.5 rounded-full">
+              ⚡ cache local · sem consumo de tokens
+            </span>
+          )}
+        </div>
         <p className="text-xs text-zinc-400 mb-4">
           A IA extraiu estas linhas. Confira os valores antes de salvar — você pode editar, remover ou adicionar.
         </p>

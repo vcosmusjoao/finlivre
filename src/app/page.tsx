@@ -1,5 +1,6 @@
 import { UploadButton } from "@/components/UploadButton";
 import { VisionImportButton } from "@/components/VisionImportButton";
+import { SampleButton } from "@/components/SampleButton";
 import { SummaryCards } from "@/components/SummaryCards";
 import { ManualEntryForm } from "@/components/ManualEntryForm";
 import { MonthSelector } from "@/components/MonthSelector";
@@ -32,10 +33,11 @@ export default function Home() {
         <SummaryCards />
         <InvoiceCards />
 
-        <div className="flex items-start gap-2 mb-6">
+        <div className="flex items-start gap-3 mb-6">
           <ManualEntryForm />
           <UploadButton />
           <VisionImportButton />
+          <SampleButton />
         </div>
 
         <DashboardBody />

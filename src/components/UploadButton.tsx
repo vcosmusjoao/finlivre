@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { importOfx, importSampleData } from '@/lib/import-pipeline';
+import { importOfx } from '@/lib/import-pipeline';
 import { AccountPickerModal } from '@/components/AccountPickerModal';
 
 export function UploadButton() {
@@ -32,20 +32,6 @@ export function UploadButton() {
     setPendingText(await file.text());
   }
 
-  async function handleLoadSample() {
-    setLoading(true);
-    setResult(null);
-    setError(null);
-    try {
-      const res = await importSampleData();
-      setResult(res);
-    } catch {
-      setError('Erro ao carregar o exemplo.');
-    } finally {
-      setLoading(false);
-    }
-  }
-
   function handleAccountPicked(accountId: number) {
     const text = pendingText!;
     setPendingText(null);
@@ -63,28 +49,19 @@ export function UploadButton() {
   }
 
   return (
-    <div className="flex flex-col gap-3">
-      <div className="flex items-center gap-3">
-        <label className="cursor-pointer inline-flex items-center gap-2 rounded-lg bg-zinc-900 dark:bg-zinc-50 px-4 py-2 text-sm font-medium text-white dark:text-zinc-900 hover:bg-zinc-700 dark:hover:bg-zinc-200 transition-colors">
-          <input type="file" accept=".ofx" className="sr-only" onChange={handleFileChange} />
-          Importar OFX
-        </label>
-        <button
-          onClick={handleLoadSample}
-          className="text-sm text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100 underline underline-offset-2 transition-colors"
-        >
-          Carregar exemplo
-        </button>
-      </div>
+    <div className="inline-flex flex-col gap-2">
+      <label className="cursor-pointer inline-flex items-center gap-2 rounded-lg bg-zinc-900 dark:bg-zinc-50 px-4 py-2 text-sm font-medium text-white dark:text-zinc-900 hover:bg-zinc-700 dark:hover:bg-zinc-200 transition-colors">
+        <input type="file" accept=".ofx" className="sr-only" onChange={handleFileChange} />
+        Importar OFX
+      </label>
 
-      {loading && <p className="text-sm text-zinc-500">Importando...</p>}
+      {loading && <p className="text-xs text-zinc-500">Importando...</p>}
       {result && (
-        <p className="text-sm text-emerald-600">
-          {result.added} entradas importadas
-          {result.skipped > 0 && `, ${result.skipped} duplicatas ignoradas`}.
+        <p className="text-xs text-emerald-600">
+          {result.added} importadas{result.skipped > 0 && `, ${result.skipped} duplicatas`}.
         </p>
       )}
-      {error && <p className="text-sm text-red-500">{error}</p>}
+      {error && <p className="text-xs text-red-500">{error}</p>}
 
       <AccountPickerModal
         open={pendingText !== null}
