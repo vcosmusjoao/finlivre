@@ -16,7 +16,11 @@ Treat it as a learning project AND a portfolio piece.
 - **M3 ✅** Accounts (color-coded), recurring items, future month projections (on-the-fly),
   installment forecast, inline category editing (merchant dictionary), data hygiene.
 - **M4 ✅** Invoice cards, JSON/CSV export, 40 unit tests, "Todos" all-time dashboard, manual installments.
-- **Next: M5** — see `FIRST_SESSION.md` and `PLAN.md §10` for parked ideas.
+- **M5 ✅** Import por imagem/PDF via Claude Vision (BYO-key, browser-direct, sem backend):
+  `importers/vision.ts` + `VisionImportButton.tsx` (tabela de revisão editável) + `settings.ts`
+  (chave no localStorage). `commitParsedEntries` extraído em `import-pipeline.ts` (dedupe cross-source).
+  47 testes. Modelo `claude-sonnet-4-6`.
+- **Next: M6** — Split/empréstimos e budgets por categoria. Ver `PLAN.md §10`.
 
 ## Working style (important)
 João is a strong Angular engineer learning React/Next.js. He has explicitly asked to:

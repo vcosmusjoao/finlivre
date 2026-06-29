@@ -24,12 +24,17 @@ export async function addManualEntry(input: ManualEntryInput): Promise<void> {
   });
 }
 
-export async function importOfx(
-  fileText: string,
+/**
+ * Persists already-parsed entries to the ledger: dedupes by hash, categorizes the
+ * new ones, and bulk-inserts. Shared by every source (OFX, vision/PDF) so they all
+ * get the same dedupe + categorization for free. Because the hash is content-based
+ * (`date|amountCents|description`), the same purchase arriving via two sources
+ * (an OFX export AND a photo of the same invoice) is deduped across sources.
+ */
+export async function commitParsedEntries(
+  entries: ParsedEntry[],
   accountId?: number
 ): Promise<{ added: number; skipped: number }> {
-  const entries = ofxImporter.parse(fileText);
-
   const existingHashes = new Set(
     await db.entries.where("hash").anyOf(entries.map(generateHash)).keys()
   );
@@ -49,6 +54,17 @@ export async function importOfx(
   }));
 
   await db.entries.bulkAdd(toInsert);
+
+  return { added: toInsert.length, skipped: entries.length - toInsert.length };
+}
+
+export async function importOfx(
+  fileText: string,
+  accountId?: number
+): Promise<{ added: number; skipped: number }> {
+  const entries = ofxImporter.parse(fileText);
+
+  const result = await commitParsedEntries(entries, accountId);
 
   // Store LEDGERBAL as an InvoiceStatement so the invoice card can show it
   if (accountId !== undefined) {
@@ -70,7 +86,7 @@ export async function importOfx(
     }
   }
 
-  return { added: toInsert.length, skipped: entries.length - toInsert.length };
+  return result;
 }
 
 /** Creates a demo Nubank account (if not already present) and imports the sample OFX. */

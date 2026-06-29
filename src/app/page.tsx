@@ -1,4 +1,5 @@
 import { UploadButton } from "@/components/UploadButton";
+import { VisionImportButton } from "@/components/VisionImportButton";
 import { SummaryCards } from "@/components/SummaryCards";
 import { ManualEntryForm } from "@/components/ManualEntryForm";
 import { MonthSelector } from "@/components/MonthSelector";
@@ -24,14 +25,19 @@ export default function Home() {
             <ExportButton />
             <AccountsManager />
             <RecurringItemsManager />
-            <ManualEntryForm />
-            <UploadButton />
           </div>
         </header>
 
         <MonthSelector />
         <SummaryCards />
         <InvoiceCards />
+
+        <div className="flex items-start gap-2 mb-6">
+          <ManualEntryForm />
+          <UploadButton />
+          <VisionImportButton />
+        </div>
+
         <DashboardBody />
 
       </div>

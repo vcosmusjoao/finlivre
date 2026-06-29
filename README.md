@@ -8,13 +8,19 @@ commitments. Built to handle Brazilian credit-card statements, including install
 
 > **Live:** https://finlivre-1ck0g8iye-joao-costa.vercel.app/ — click "Carregar exemplo" to try it without uploading your own data.
 
-> Status: Milestone 1 shipped. Milestone 2 (manual entries + income vs expense) in progress.
+> Status: Milestones 1–5 shipped. Latest: import an invoice from a **photo or PDF** via Claude Vision.
 
 ## Why local-first
 
-Your financial data is stored only in your browser (IndexedDB) and never sent to a server.
-Parsing happens entirely on your device. This is a deliberate design choice: privacy by default,
-and a one-click sample statement so anyone can try the app without uploading their own data.
+Your financial data is **stored only in your browser** (IndexedDB) and never sent to a server —
+there is no backend. Storage is 100% local, always.
+
+Parsing is deterministic and on-device for OFX. For banks that only provide a PDF — or none at
+all (e.g. Inter's open invoice, viewable only in the app) — there's an **optional, opt-in import
+from a photo or PDF** that uses Claude Vision. That request goes directly from your browser to
+Anthropic **under your own API key** (stored only in your browser); the extracted lines are shown
+in an editable review table before anything is saved. The tradeoff is explicit and user-controlled:
+the default path is fully local, and the AI path only runs when you choose it, with your key.
 
 ## Tech
 
@@ -41,7 +47,9 @@ Open http://localhost:3000.
 
 ## Roadmap
 
-1. OFX import, categorization, and a spending dashboard (current)
-2. Manual entries and income, for income vs expense and net cashflow
-3. Recurring commitments and installment forecasting
-4. Multiple accounts, CSV/PDF import, and budgets per category
+1. OFX import, categorization, and a spending dashboard ✅
+2. Manual entries and income, for income vs expense and net cashflow ✅
+3. Recurring commitments and installment forecasting ✅
+4. Invoice cards, export (JSON/CSV), all-time dashboard, tests ✅
+5. Import an invoice from a photo or PDF via Claude Vision (BYO key) ✅
+6. Shared expenses / split, budgets per category (next)

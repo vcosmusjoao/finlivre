@@ -1,6 +1,7 @@
 import "fake-indexeddb/auto";
-import { importOfx } from "../import-pipeline";
+import { importOfx, commitParsedEntries } from "../import-pipeline";
 import { db } from "../db";
+import type { ParsedEntry } from "../importers/ofx";
 
 const SAMPLE_OFX = `
 <OFX><CREDITCARDMSGSRSV1><CCSTMTTRNRS><CCSTMTRS><BANKTRANLIST>
@@ -52,5 +53,44 @@ describe("importOfx", () => {
 
     const entries = await db.entries.toArray();
     expect(entries).toHaveLength(2);
+  });
+});
+
+describe("commitParsedEntries", () => {
+  const pdfEntry: ParsedEntry = {
+    date: "2026-06-15",
+    description: "UBER *TRIP",
+    amountCents: 2490,
+    direction: "expense",
+    source: "pdf",
+  };
+
+  it("categoriza e persiste entradas parseadas (qualquer fonte)", async () => {
+    const res = await commitParsedEntries([pdfEntry]);
+
+    expect(res.added).toBe(1);
+    const entries = await db.entries.toArray();
+    expect(entries[0].source).toBe("pdf");
+    expect(entries[0].category).toBeTruthy(); // categorize() rodou
+    expect(entries[0].hash).toBe("2026-06-15|2490|UBER *TRIP");
+  });
+
+  it("deduplica entre fontes: o mesmo conteúdo via OFX e via PDF não duplica", async () => {
+    await importOfx(SAMPLE_OFX); // contém UBER *TRIP, 2490, 2026-06-15
+    const res = await commitParsedEntries([pdfEntry]);
+
+    expect(res.added).toBe(0);
+    expect(res.skipped).toBe(1);
+
+    const ubers = await db.entries.where("hash").equals("2026-06-15|2490|UBER *TRIP").count();
+    expect(ubers).toBe(1);
+  });
+
+  it("associa accountId quando fornecido", async () => {
+    const res = await commitParsedEntries([pdfEntry], 7);
+
+    expect(res.added).toBe(1);
+    const entries = await db.entries.toArray();
+    expect(entries[0].accountId).toBe(7);
   });
 });

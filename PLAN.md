@@ -101,6 +101,17 @@ backup button, because clearing browser data wipes IndexedDB.
     `InvoiceStatement` table, but no UI shows it yet. Show "Fatura Junho: R$ 1.658,76 em
     compras · R$ 100 já pagos" per account. Move to M4 opening task.
 
+- **Milestone 5 — import por imagem/PDF (Claude Vision, BYO-key).** ✅
+  - Um único importer (`src/lib/importers/vision.ts`) cobre **foto/print E PDF** — resolve bancos
+    que só dão PDF e o caso Inter (fatura aberta só na tela do app, sem PDF).
+  - Chamada **direta do browser** (`dangerouslyAllowBrowser`) com a **chave do próprio usuário**
+    (`src/lib/settings.ts`, localStorage). Sem backend; armazenamento continua 100% local.
+  - Modelo `claude-sonnet-4-6` + **structured output** (Zod) → `ParsedEntry[]`.
+  - **Tabela de revisão editável** (`VisionImportButton.tsx`) antes de gravar — IA pode errar,
+    usuário confere/edita/remove. Categorias confirmadas alimentam o `MerchantRule` (beneficia o OFX).
+  - Reusa `commitParsedEntries` (extraído de `import-pipeline.ts`): dedupe por hash de conteúdo
+    funciona **entre fontes** (mesma compra via OFX e foto não duplica).
+
 - **Milestone 4 — depth and polish.**
   - Invoice summary card (carry-over from M3).
   - Unit tests: Jest setup + tests for `format.ts`, OFX parser, `getProjectedMonth` logic.
@@ -137,11 +148,10 @@ backup button, because clearing browser data wipes IndexedDB.
   "this month's bill" grouping and the installment forecast of M3.
 - Transaction color-coding by account in the table: when multiple accounts exist, each row
   gets a color accent matching the account. Small UI lift, big clarity gain.
-- **PDF import via AI (M5):** upload a bank statement PDF → extract text (pdf.js) → send to
-  Claude API → receive structured JSON of transactions → editable review table → import to DB.
-  Requires an Anthropic API key (can live in localStorage as a user setting) and an optional
-  thin backend if the key can't be exposed client-side. Strong portfolio differentiator — most
-  personal finance apps don't do this. Implement one bank at a time (starting with Inter/Nubank).
+- ~~**PDF import via AI (M5):**~~ ✅ **DONE in M5.** Shipped as a single Claude Vision importer
+  that accepts **image OR PDF** (no pdf.js needed — Claude reads PDFs natively), BYO-key in
+  localStorage, browser-direct (no backend), structured output → editable review table → DB.
+  See PLAN.md §9 Milestone 5.
 - **Empréstimos e divisões (M5):** track money lent to people and shared expenses.
   Two sub-features: (1) Split — mark that part of a credit card purchase belongs to someone
   else (e.g., 50% Gabi), which halves your effective amountCents in all totals. Requires

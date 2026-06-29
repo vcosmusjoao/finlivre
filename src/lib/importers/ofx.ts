@@ -31,7 +31,7 @@ export function parseOfxMeta(fileText: string): OFXMeta {
 export type ParsedEntry = Pick<
   Entry,
   "date" | "billingMonth" | "description" | "amountCents" | "direction" | "installment"
-> & { source: "ofx" };
+> & { source: "ofx" | "pdf" };
 
 export interface Importer {
   format: "ofx" | "csv" | "pdf";
