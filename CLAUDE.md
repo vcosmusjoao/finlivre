@@ -50,8 +50,13 @@ Treat it as a learning project AND a portfolio piece.
   Conhecimento) que reclassifica todo gasto, com charts na aba "Todos". Isso + Split viram **M7+**.
   Ver `PLAN.md §10`. Débito quitado de M6: `matchesFilters` começou a centralizar os totais (hoje ainda
   há `reduce(+amountCents)` inline em alguns componentes) — base para quando o Split chegar.
-- **Next: M7** — definir entre **categorias-mestre** (50/30/20, o desejo do João) ou **Split/empréstimos**
-  (modelo de dados a decidir). Ver `PLAN.md §10`.
+- **Pós-M6 (hotfixes):**
+  - **Formato de data:** `lib/format.ts` ganhou `formatDate(yyyyMMdd)` (string split, sem `new Date` para
+    evitar bug de timezone UTC). `TransactionsTable` exibe `16/06/2026` em vez de `2026-06-16`.
+- **Next: batch categorization** (mini-feature antes do M7) — multi-select na tabela + bulk assign
+  categoria + salva `MerchantRule` retroativamente. Ver `FIRST_SESSION.md`.
+- **M7** (após batch): decidir entre **categorias-mestre** (50/30/20, o desejo do João) ou
+  **Split/empréstimos** (modelo de dados a decidir). Ver `PLAN.md §10`.
 
 ## Working style (important)
 João is a strong Angular engineer learning React/Next.js. He has explicitly asked to:

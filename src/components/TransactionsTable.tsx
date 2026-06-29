@@ -8,6 +8,7 @@ import { useAccountFilter } from '@/context/AccountFilterContext';
 import { matchesFilters } from '@/lib/filters';
 import { colorForCategory } from '@/lib/categoryColor';
 import { learnRule } from '@/lib/categorize';
+import { formatDate } from '@/lib/format';
 
 async function deleteEntry(entry: Entry) {
   await db.entries.delete(entry.id!);
@@ -88,7 +89,7 @@ export function TransactionsTable() {
                         : '#D1D5DB'
                     }}
                   />
-                  {entry.date}
+                  {formatDate(entry.date)}
                 </div>
               </td>
 

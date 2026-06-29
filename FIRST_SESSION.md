@@ -1,49 +1,75 @@
-# Start here — next session (M7)
+# Start here — next session (Batch Categorization)
 
 Open this folder (`C:\dev\finlivre`) in Claude Code.
-M1 → M6 complete. Start session by reading PLAN.md §10 (parked ideas) and deciding the M7
-scope **before** writing any code.
+M1 → M6 complete + hotfix (date format). Start session by reading PLAN.md §10 and this file.
 
 ## 0. Orient (2 min)
-- Read `PLAN.md §9` (milestones, M6 included) and `§10` (parked ideas).
-- Check `CLAUDE.md` for current state and gotchas.
 - 67 tests passing. TypeScript clean. Build clean.
+- Date format: `formatDate` in `lib/format.ts` (string split, no `new Date` — timezone safety).
+- Next feature: **batch categorization** (mini-feature, ~2 days, before M7).
 
-## 1. Decide M7 — two strong candidates (independent)
+## 1. Batch categorization — the problem
 
-### Option A — Categorias-mestre (João's explicit wish) ⭐
-A second taxonomy level above merchant categories: buckets **Custos fixos, Conforto, Metas,
-Prazeres, Liberdade financeira, Conhecimento**. Every spend gets reclassified into a bucket; the
-"Todos" tab gets per-bucket charts. This is the "analysis tier" he described.
-- **Discuss the data model first.** A `bucket` field on each category? A `categoryBucket` map?
-  Roll-up of totals per bucket? New classification UX?
-- Note: this is what justifies reviving the **dead `categories` table** (today categories are just
-  strings on `entry.category`; `monthlyBudgetCents`/`color` are unused).
-- Bigger user setup upfront, but the highest planning power. It's a full milestone.
+The user's biggest daily pain: after importing 40 transactions, most arrive uncategorized.
+Categorizing one-by-one is tedious. The ask: **select multiple rows → assign one category to all**.
 
-### Option B — Split / Empréstimos
-Mark part of a purchase as someone else's (50% Gabi) → halves your effective amount in all totals;
-plus Cobranças (what people owe you) with a `wa.me` "Lembrar" deep link.
-- **Architectural prerequisite:** split touches every total. There is **no central sum function**
-  yet (inline `reduce(+amountCents)` in several components). M6 started this with `matchesFilters`.
-  Before split, extract `effectiveAmountCents(entry)` as a no-op (tests green), then apply split =
-  one function changes instead of six.
-- Data model: `splits` table `{ entryId, personName, amountCents, dueDate?, paidAt? }`. A Cobrança
-  is just a split with `dueDate` and no `paidAt` (one table powers both). See PLAN.md §10.
+The `MerchantRule` table already exists — when you categorize inline, it saves a rule so future
+imports auto-categorize. But two gaps remain:
+1. **Retroactive:** existing entries already in the DB stay "Uncategorized" even after a rule is saved.
+2. **Volume:** bulk import with many unknown merchants means many individual clicks.
 
-## 2. Session flow (recommended)
-1. Read PLAN.md §10 together.
-2. Pick A or B (they're independent). Challenge the choice — which delivers more, with less risk?
-3. **Design the data model / UX BEFORE touching code.**
-4. João should be taught, not handed finished code. Explain every decision, relate to Angular.
+## 2. Design decisions (already discussed — do not re-litigate)
 
-## 3. Reminders
+- **Multi-select + bulk assign** (not grouping by merchant — João explicitly confirmed).
+- **Checkbox visible on hover** on each row (clean; desktop-first for now, mobile later).
+- **Floating action bar** at the bottom when ≥1 row selected — standard pattern (Gmail, Linear).
+  Shows: "X selecionadas · [dropdown categoria ▾] · [Aplicar] · [Cancelar]"
+- **Category dropdown** pulls from `db.entries.orderBy('category').uniqueKeys()` — no new table,
+  categories already exist as strings on `entry.category`.
+- **On apply:** (1) update `category` on all selected entries, (2) save `MerchantRule` for each
+  unique normalized merchant in the selection.
+- **Retroactive prompt:** after applying, ask: "Aplicar 'Food' às outras N transações sem categoria
+  do mesmo comerciante?" — user confirms before retroactive update.
+
+## 3. Implementation notes
+
+**State:** selection is local UI state in `TransactionsTable` (no Context needed — it's ephemeral).
+`useState<Set<number>>(new Set())` where the number is `entry.id`.
+
+**Merchant normalization:** already exists in `src/lib/categorize.ts` — reuse `normalize()`.
+
+**Retroactive query:**
+```ts
+db.entries
+  .where('category').equals('Uncategorized')
+  .filter(e => normalizedMerchants.has(normalize(e.description)))
+  .modify({ category: newCategory })
+```
+
+**DB schema:** no changes needed. Uses existing `entries` and `merchantRules` tables (schema v3).
+
+**Floating action bar:** `position: fixed` bottom, only renders when `selection.size > 0`.
+In Angular terms: think of it as a conditional `*ngIf` on a sticky bottom bar.
+
+**Clear selection:** after apply, after cancel, and after a month/account filter change
+(entries in view change, stale selection would be confusing).
+
+## 4. Tests to add
+- Select + bulk assign updates all entries.
+- MerchantRule is saved for each unique merchant in the selection.
+- Retroactive: entries with same normalized merchant + Uncategorized get updated.
+- Empty selection: action bar hidden.
+
+## 5. Reminders
 - Money is always integer **cents** (`amountCents`).
-- Dexie = Client Component (`'use client'`). Schema is at **v3** (`recurringOverrides` added in M6).
-- All `<dialog>` modals need `fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2`.
-- New idea mid-build? → PLAN.md §10 "Parked". Ask: "does this block M7?" If not → park it.
-- Run `npm test` — 67 tests must stay green before any commit.
+- Dexie = Client Component (`'use client'`). Schema is at **v3**.
 - `useLiveQuery` with array default: always `[] as MyType[]`, not bare `[]`.
-- The account filter is global via `lib/filters.ts → matchesFilters`. Reuse it; don't re-roll
-  month/account conditions inline. Same idea as `effectiveMonth` for month logic.
 - Category colors are deterministic via `lib/categoryColor.ts → colorForCategory` (no DB).
+- `matchesFilters` in `lib/filters.ts` is the single filter predicate — reuse, don't re-roll.
+- New idea mid-build? → PLAN.md §10. Ask: "does this block batch categorization?" If not → park it.
+- Run `npm test` — 67 tests must stay green before any commit.
+
+## 6. After batch categorization
+Decide M7 scope (read PLAN.md §10):
+- **Option A:** Categorias-mestre (João's explicit wish — 6 buckets, reclassify all spending).
+- **Option B:** Split/Cobranças (requires `effectiveAmountCents` refactor first).

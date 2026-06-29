@@ -28,6 +28,11 @@ export function monthDiff(from: string, to: string): number {
 
 // Which month an entry belongs to for budgeting purposes.
 // billingMonth (from OFX DTEND) takes priority over the raw purchase date.
+export function formatDate(yyyyMMdd: string): string {
+  const [year, month, day] = yyyyMMdd.split('-');
+  return `${day}/${month}/${year}`;
+}
+
 export function effectiveMonth(entry: Pick<Entry, 'date' | 'billingMonth'>): string {
   return entry.billingMonth ?? entry.date.slice(0, 7);
 }
