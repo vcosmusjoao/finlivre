@@ -1,61 +1,49 @@
-# Start here — next session (M5 planning)
+# Start here — next session (M7)
 
 Open this folder (`C:\dev\finlivre`) in Claude Code.
-M1, M2, M3, M4 complete. Start session by reading PLAN.md §10 (parked ideas) and discussing M5 scope.
+M1 → M6 complete. Start session by reading PLAN.md §10 (parked ideas) and deciding the M7
+scope **before** writing any code.
 
 ## 0. Orient (2 min)
-- Read `PLAN.md §9` (milestone status) and `§10` (parked ideas).
+- Read `PLAN.md §9` (milestones, M6 included) and `§10` (parked ideas).
 - Check `CLAUDE.md` for current state and gotchas.
+- 67 tests passing. TypeScript clean. Build clean.
 
-## 1. M4 task list (work top to bottom)
+## 1. Decide M7 — two strong candidates (independent)
 
-### 1a. Invoice summary card ✅ DONE
-- `src/components/InvoiceCards.tsx` — shows LEDGERBAL per account per month.
-- Inserted between SummaryCards and DashboardBody in `page.tsx`.
-- Shows "R$ X,XX a pagar". No "já pagos" calc (LEDGERBAL is already net).
+### Option A — Categorias-mestre (João's explicit wish) ⭐
+A second taxonomy level above merchant categories: buckets **Custos fixos, Conforto, Metas,
+Prazeres, Liberdade financeira, Conhecimento**. Every spend gets reclassified into a bucket; the
+"Todos" tab gets per-bucket charts. This is the "analysis tier" he described.
+- **Discuss the data model first.** A `bucket` field on each category? A `categoryBucket` map?
+  Roll-up of totals per bucket? New classification UX?
+- Note: this is what justifies reviving the **dead `categories` table** (today categories are just
+  strings on `entry.category`; `monthlyBudgetCents`/`color` are unused).
+- Bigger user setup upfront, but the highest planning power. It's a full milestone.
 
-### 1b. Unit tests ✅ DONE
-- Jest already configured. `fake-indexeddb` already installed.
-- **40 tests passing** across 5 suites.
-- New test files: `format.test.ts`, `accounts.test.ts`, `projection.test.ts`
-- `stripInstallmentText` exported from `projection.ts` (was private).
+### Option B — Split / Empréstimos
+Mark part of a purchase as someone else's (50% Gabi) → halves your effective amount in all totals;
+plus Cobranças (what people owe you) with a `wa.me` "Lembrar" deep link.
+- **Architectural prerequisite:** split touches every total. There is **no central sum function**
+  yet (inline `reduce(+amountCents)` in several components). M6 started this with `matchesFilters`.
+  Before split, extract `effectiveAmountCents(entry)` as a no-op (tests green), then apply split =
+  one function changes instead of six.
+- Data model: `splits` table `{ entryId, personName, amountCents, dueDate?, paidAt? }`. A Cobrança
+  is just a split with `dueDate` and no `paidAt` (one table powers both). See PLAN.md §10.
 
-### 1c. Export to JSON/CSV ✅ DONE
-- `src/components/ExportButton.tsx` — dropdown with JSON (full backup) and CSV (spreadsheet).
-- JSON: all tables (entries, accounts, recurringItems, merchantRules, invoiceStatements).
-- CSV: entries only, account name resolved, UTF-8 BOM for Excel.
-- Button placed in header between "Limpar dados" and "Contas".
+## 2. Session flow (recommended)
+1. Read PLAN.md §10 together.
+2. Pick A or B (they're independent). Challenge the choice — which delivers more, with less risk?
+3. **Design the data model / UX BEFORE touching code.**
+4. João should be taught, not handed finished code. Explain every decision, relate to Angular.
 
-### Bugs fixed this session
-- SpendingChart: replaced hardcoded `width={400}` with `ResponsiveContainer` + custom JSX legend.
-- InvoiceCards: removed incorrect "já pagos" logic (LEDGERBAL is net, not gross).
-- Recurring items: current month now gets projection in SummaryCards (`hasProjection = selectedMonth >= now`).
-- DashboardBody: current month now shows "Previstos para este mês" card with `ProjectedView hideWhenEmpty`.
-- RecurringItemsManager: `cancelEdit()` was resetting `activeFrom` to current month instead of next month.
-
-### 1d. "Todos" multi-dashboard ✅ DONE
-When `selectedMonth === ''`, DashboardBody renders `<AllTimeDashboard />`:
-- Donut: gastos por categoria (`SpendingChart` — já filtrava corretamente por selectedMonth)
-- Bar horizontal: gastos por conta (`SpendingByAccountChart.tsx` — novo)
-- IncomeExpenseChart: income vs expense all-time
-- `TransactionsTable`: todas as transações
-- `SummaryCards`: oculto no modo "Todos" (`if (!selectedMonth) return null`)
-
-### 1e. Parcelamento no formulário manual ⏳ NEXT
-Adicionar campo `installments` (number, default 1) no `ManualEntryForm`.
-Quando > 1: criar N entradas espaçadas mês a mês, cada uma com `amountCents / N`,
-descrição `"Compra (1/N)"`, `"Compra (2/N)"`, etc. Só aparece quando `direction === 'expense'`.
-Reutiliza a estrutura `installment: { current, total }` já existente na Entry.
-
-### 1f. (Stretch) Budget categories
-50/30/20 style: Custos fixos / Conforto / Prazeres / Metas.
-Requires thinking through UX before coding — discuss before implementing.
-
-## 2. Reminders
+## 3. Reminders
 - Money is always integer **cents** (`amountCents`).
-- Dexie = Client Component (`'use client'`).
+- Dexie = Client Component (`'use client'`). Schema is at **v3** (`recurringOverrides` added in M6).
 - All `<dialog>` modals need `fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2`.
-- Future projections are on-the-fly (`getProjectedMonth`) — never write projected data to DB.
-- New idea? → PLAN.md §10 "Parked". Ask: "does this block M4?" If not → park it.
-- Tests: run `npm test` — must stay green before any commit.
-- useLiveQuery with array default: always use `[] as MyType[]`, not bare `[]`.
+- New idea mid-build? → PLAN.md §10 "Parked". Ask: "does this block M7?" If not → park it.
+- Run `npm test` — 67 tests must stay green before any commit.
+- `useLiveQuery` with array default: always `[] as MyType[]`, not bare `[]`.
+- The account filter is global via `lib/filters.ts → matchesFilters`. Reuse it; don't re-roll
+  month/account conditions inline. Same idea as `effectiveMonth` for month logic.
+- Category colors are deterministic via `lib/categoryColor.ts → colorForCategory` (no DB).

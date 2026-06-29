@@ -9,13 +9,14 @@ export function ClearDataButton() {
   const { setSelectedMonth } = useMonth();
 
   async function handleClear() {
-    await db.transaction('rw', [db.entries, db.accounts, db.categories, db.merchantRules, db.invoiceStatements, db.recurringItems], async () => {
+    await db.transaction('rw', [db.entries, db.accounts, db.categories, db.merchantRules, db.invoiceStatements, db.recurringItems, db.recurringOverrides], async () => {
       await db.entries.clear();
       await db.accounts.clear();
       await db.categories.clear();
       await db.merchantRules.clear();
       await db.invoiceStatements.clear();
       await db.recurringItems.clear();
+      await db.recurringOverrides.clear();
     });
     setSelectedMonth('');
     setConfirming(false);

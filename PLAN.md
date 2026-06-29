@@ -122,7 +122,29 @@ backup button, because clearing browser data wipes IndexedDB.
   - PDF importer (Inter bank, one bank at a time).
   - Assets/net worth panel (the house, investments).
 
+- **Milestone 6 — polimento e filtros.** ✅ (Split e Budgets adiados — ver §10.) 67 testes.
+  - **Cores de categoria estáveis** (`lib/categoryColor.ts`, hash djb2) no donut e chips.
+  - **Projeção legível:** `ProjectedView` em 2 linhas + tooltip.
+  - **Header organizado:** `SettingsMenu` (engrenagem) agrupa as ações secundárias.
+  - **Filtro de conta global:** `AccountFilterContext` + `AccountFilter`, predicado central
+    `matchesFilters(entry, {month, accountId})` em `lib/filters.ts` (único ponto de verdade,
+    aplicado em todos os totais e na projeção).
+  - **Override de recorrente por mês:** schema v3 + tabela `recurringOverrides`. Ajustar/pular um
+    recorrente só naquele mês, preservando o invariante "projeção nunca materializada".
+  - **Por que Split/Budgets saíram:** ver §10 (Budget exigia ressuscitar a tabela `categories` e o
+    desejo real do João é maior — categorias-mestre; Split toca todos os totais e merece desenho
+    próprio). Empacotar os dois arriscava não fechar a milestone.
+
 ## 10. Parked ideas (v2+ — do not build during M1)
+- **Categorias-mestre (forte candidato a M7 — desejo explícito do João):** um segundo nível de
+  taxonomia acima das categorias de comerciante. Baldes: **Custos fixos, Conforto, Metas, Prazeres,
+  Liberdade financeira, Conhecimento**. Cada gasto é reclassificado num balde; a aba "Todos" ganha
+  charts por balde. É o "patamar de análise" que ele descreveu ("analisar tudo que você gasta e
+  encaixar nisso"). Implica: campo de balde por categoria (ou mapa categoria→balde), roll-up de
+  totais, nova UI de classificação, charts no `AllTimeDashboard`. Maior poder de planejamento, mais
+  setup do usuário — é uma milestone inteira, não um adendo. Nota: a tabela `categories` (com
+  `monthlyBudgetCents`/`color`) está **morta** hoje (categorias são só strings em `entry.category`);
+  esta feature é o que justifica ressuscitá-la.
 - AI fallback for low-confidence lines / unknown merchants (optional toggle).
 - MCP server so Claude Desktop can categorize a statement and save a report.
 - Supabase + auth + multi-device sync.
@@ -152,15 +174,18 @@ backup button, because clearing browser data wipes IndexedDB.
   that accepts **image OR PDF** (no pdf.js needed — Claude reads PDFs natively), BYO-key in
   localStorage, browser-direct (no backend), structured output → editable review table → DB.
   See PLAN.md §9 Milestone 5.
-- **Empréstimos e divisões (M5):** track money lent to people and shared expenses.
-  Two sub-features: (1) Split — mark that part of a credit card purchase belongs to someone
-  else (e.g., 50% Gabi), which halves your effective amountCents in all totals. Requires
-  a `splits` table `{ entryId, personName, amountCents, dueDate? }` and a recalculation
-  pass in SummaryCards/SpendingChart. (2) Cobranças — list of pending amounts owed to you,
-  with optional `phone` field. "Lembrar" button generates a `wa.me/{phone}?text=...` deep
-  link that opens WhatsApp with a pre-filled message — fully local-first, no backend.
-  Architectural note: split logic touches every total in the app; design the data model
-  carefully before implementing.
+- **Empréstimos e divisões (candidato a M7+, modelo a decidir — adiado da M6):** track money lent to
+  people and shared expenses. Two sub-features: (1) Split — mark that part of a credit card purchase
+  belongs to someone else (e.g., 50% Gabi), which halves your effective amountCents in all totals.
+  Requires a `splits` table `{ entryId, personName, amountCents, dueDate?, paidAt? }` and routing all
+  totals through a single `effectiveAmountCents(entry)` (the sibling of `effectiveMonth`). (2) Cobranças
+  — list of pending amounts owed to you, with optional `phone` field; uma cobrança é só um split com
+  `dueDate` e sem `paidAt`, então a mesma tabela já as alimenta. "Lembrar" button generates a
+  `wa.me/{phone}?text=...` deep link — fully local-first, no backend. **Pré-requisito de arquitetura:**
+  split toca todos os totais; hoje **não existe função central de soma** (há `reduce(+amountCents)`
+  inline em vários componentes). A M6 começou a quitar isso com `matchesFilters`; antes do split, extrair
+  `effectiveAmountCents` como no-op (testes verdes) e só então aplicar o split = mudança de 1 função em
+  vez de 6.
 
 ## 11. UI prototype (optional, before coding the dashboard)
 Decide the *look* fast with a static mockup, then build it by hand to learn. Paste this into a

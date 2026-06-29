@@ -2,12 +2,15 @@
 
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '@/lib/db';
-import { formatBRL, effectiveMonth, currentMonth } from '@/lib/format';
+import { formatBRL, currentMonth } from '@/lib/format';
+import { matchesFilters } from '@/lib/filters';
 import { useMonth } from '@/context/MonthContext';
+import { useAccountFilter } from '@/context/AccountFilterContext';
 import { getProjectedMonth } from '@/lib/projection';
 
 export function SummaryCards() {
   const { selectedMonth } = useMonth();
+  const { selectedAccountId } = useAccountFilter();
   const now = currentMonth();
   const isFuture = !!selectedMonth && selectedMonth > now;
   // Current month also gets projection so recurring items set from this month are visible.
@@ -17,22 +20,22 @@ export function SummaryCards() {
   // Real entries — past/current months use these directly; current/future months add projection on top
   const income = useLiveQuery(() =>
     db.entries.where('direction').equals('income')
-      .and(e => !selectedMonth || effectiveMonth(e) === selectedMonth)
+      .and(e => matchesFilters(e, { month: selectedMonth, accountId: selectedAccountId }))
       .toArray()
       .then(rows => rows.reduce((sum, e) => sum + e.amountCents, 0))
-  , [selectedMonth], 0);
+  , [selectedMonth, selectedAccountId], 0);
 
   const expense = useLiveQuery(() =>
     db.entries.where('direction').equals('expense')
-      .and(e => !selectedMonth || effectiveMonth(e) === selectedMonth)
+      .and(e => matchesFilters(e, { month: selectedMonth, accountId: selectedAccountId }))
       .toArray()
       .then(rows => rows.reduce((sum, e) => sum + e.amountCents, 0))
-  , [selectedMonth], 0);
+  , [selectedMonth, selectedAccountId], 0);
 
   // Projected data — recurring + installment commitments for current and future months
   const projection = useLiveQuery(
-    () => hasProjection && selectedMonth ? getProjectedMonth(selectedMonth) : Promise.resolve(null),
-    [selectedMonth, hasProjection]
+    () => hasProjection && selectedMonth ? getProjectedMonth(selectedMonth, selectedAccountId) : Promise.resolve(null),
+    [selectedMonth, hasProjection, selectedAccountId]
   );
 
   // Current/future months: real entries + projected items (recurring/installments)

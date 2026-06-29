@@ -4,7 +4,9 @@ import { useMemo, useRef, useState } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db, type Entry } from '@/lib/db';
 import { useMonth } from '@/context/MonthContext';
-import { effectiveMonth } from '@/lib/format';
+import { useAccountFilter } from '@/context/AccountFilterContext';
+import { matchesFilters } from '@/lib/filters';
+import { colorForCategory } from '@/lib/categoryColor';
 import { learnRule } from '@/lib/categorize';
 
 async function deleteEntry(entry: Entry) {
@@ -20,12 +22,13 @@ async function saveCategory(entry: Entry, newCategory: string) {
 
 export function TransactionsTable() {
   const { selectedMonth } = useMonth();
+  const { selectedAccountId } = useAccountFilter();
 
   const entries = useLiveQuery(() =>
     db.entries.orderBy('date').reverse()
-      .and(e => !selectedMonth || effectiveMonth(e) === selectedMonth)
+      .and(e => matchesFilters(e, { month: selectedMonth, accountId: selectedAccountId }))
       .toArray()
-  , [selectedMonth]);
+  , [selectedMonth, selectedAccountId]);
 
   const accounts = useLiveQuery(() => db.accounts.toArray(), []);
   const accountMap = useMemo(
@@ -121,13 +124,20 @@ export function TransactionsTable() {
                     type="button"
                     onClick={() => startEdit(entry)}
                     title="Clique para categorizar"
-                    className={`inline-block rounded-full px-2 py-0.5 text-xs transition-colors text-left ${
+                    className={`inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 text-xs transition-colors text-left ${
                       entry.category === 'Uncategorized'
                         ? 'bg-amber-50 dark:bg-amber-950 text-amber-600 dark:text-amber-400 border border-dashed border-amber-300 dark:border-amber-700 hover:bg-amber-100'
                         : 'bg-zinc-100 dark:bg-zinc-700 text-zinc-600 dark:text-zinc-300 hover:bg-zinc-200 dark:hover:bg-zinc-600'
                     }`}
                   >
-                    {entry.category === 'Uncategorized' ? '? Categorizar' : entry.category}
+                    {entry.category === 'Uncategorized' ? (
+                      '? Categorizar'
+                    ) : (
+                      <>
+                        <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: colorForCategory(entry.category) }} />
+                        {entry.category}
+                      </>
+                    )}
                   </button>
                 )}
               </td>

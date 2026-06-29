@@ -4,12 +4,14 @@ import { SampleButton } from "@/components/SampleButton";
 import { SummaryCards } from "@/components/SummaryCards";
 import { ManualEntryForm } from "@/components/ManualEntryForm";
 import { MonthSelector } from "@/components/MonthSelector";
+import { AccountFilter } from "@/components/AccountFilter";
 import { ClearDataButton } from "@/components/ClearDataButton";
 import { AccountsManager } from "@/components/AccountsManager";
 import { RecurringItemsManager } from "@/components/RecurringItemsManager";
 import { DashboardBody } from "@/components/DashboardBody";
 import { InvoiceCards } from "@/components/InvoiceCards";
 import { ExportButton } from "@/components/ExportButton";
+import { SettingsMenu } from "@/components/SettingsMenu";
 
 export default function Home() {
   return (
@@ -21,15 +23,16 @@ export default function Home() {
             <h1 className="text-xl font-semibold text-zinc-900 dark:text-zinc-50">FinLivre</h1>
             <p className="text-zinc-400 text-xs">enfim livre.</p>
           </div>
-          <div className="flex items-center gap-3">
-            <ClearDataButton />
-            <ExportButton />
+          <SettingsMenu>
             <AccountsManager />
             <RecurringItemsManager />
-          </div>
+            <ExportButton />
+            <ClearDataButton />
+          </SettingsMenu>
         </header>
 
         <MonthSelector />
+        <AccountFilter />
         <SummaryCards />
         <InvoiceCards />
 

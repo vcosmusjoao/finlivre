@@ -73,6 +73,19 @@ export interface RecurringItem {
   activeTo?: string;    // yyyy-MM — last month (undefined = indefinite)
 }
 
+/**
+ * A single-month exception to a RecurringItem (e.g. salary was 5004 in June, not 5300).
+ * Modeled as an override — NOT a materialized entry — so the "future months are computed
+ * on-the-fly" invariant holds and there's no double-count risk against real OFX data.
+ */
+export interface RecurringOverride {
+  id?: number;
+  recurringItemId: number;
+  month: string;         // yyyy-MM — the single month this override applies to
+  amountCents?: number;  // overridden amount for that month
+  skip?: boolean;        // true = the recurring item does not apply this month
+}
+
 class FinLivreDB extends Dexie {
   entries!: Table<Entry, number>;
   accounts!: Table<Account, number>;
@@ -80,6 +93,7 @@ class FinLivreDB extends Dexie {
   merchantRules!: Table<MerchantRule, string>;
   invoiceStatements!: Table<InvoiceStatement, number>;
   recurringItems!: Table<RecurringItem, number>;
+  recurringOverrides!: Table<RecurringOverride, number>;
 
   constructor() {
     super("finlivre");
@@ -98,6 +112,16 @@ class FinLivreDB extends Dexie {
       merchantRules: "merchant",
       invoiceStatements: "++id, accountId, month, [accountId+month]",
       recurringItems: "++id, direction",
+    });
+    // v3: adds recurringOverrides for per-month exceptions to a recurring item.
+    this.version(3).stores({
+      entries: "++id, date, category, direction, accountId, hash",
+      accounts: "++id, name",
+      categories: "++id, name",
+      merchantRules: "merchant",
+      invoiceStatements: "++id, accountId, month, [accountId+month]",
+      recurringItems: "++id, direction",
+      recurringOverrides: "++id, recurringItemId, month, [recurringItemId+month]",
     });
   }
 }

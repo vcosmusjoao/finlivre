@@ -10,17 +10,48 @@ Treat it as a learning project AND a portfolio piece.
 - `FIRST_SESSION.md` — what to tackle in the next session (updated after every milestone).
 - `docs/nextjs-notes.md` — Next.js mental model with Angular bridges (João is learning Next.js).
 
-## Current state (as of 2026-06-28)
+## Current state (as of 2026-06-29)
 - **M1 ✅** OFX import, categorization, spending chart, sample data, Vercel deploy.
 - **M2 ✅** Manual entries, income/expense, month filter, billing cycle (`billingMonth`).
 - **M3 ✅** Accounts (color-coded), recurring items, future month projections (on-the-fly),
   installment forecast, inline category editing (merchant dictionary), data hygiene.
 - **M4 ✅** Invoice cards, JSON/CSV export, 40 unit tests, "Todos" all-time dashboard, manual installments.
-- **M5 ✅** Import por imagem/PDF via Claude Vision (BYO-key, browser-direct, sem backend):
-  `importers/vision.ts` + `VisionImportButton.tsx` (tabela de revisão editável) + `settings.ts`
-  (chave no localStorage). `commitParsedEntries` extraído em `import-pipeline.ts` (dedupe cross-source).
-  47 testes. Modelo `claude-sonnet-4-6`.
-- **Next: M6** — Split/empréstimos e budgets por categoria. Ver `PLAN.md §10`.
+- **M5 ✅** Import por imagem/PDF via Claude Vision (BYO-key, browser-direct, sem backend). 50 testes.
+  - `importers/vision.ts`: modelo `claude-sonnet-4-6`, structured output (Zod), **cache two-layer**
+    (module-level `Map` + localStorage, djb2 hash, LRU 30 entradas, cross-session).
+  - `VisionImportButton.tsx`: flow espelha OFX — arquivo → AI → `AccountPickerModal` → tabela de revisão.
+    `invoiceTotalCents` extraído pela IA preenche o campo "Total da fatura" automaticamente →
+    salvo como `InvoiceStatement` (mesmo papel do `LEDGERBAL` do OFX). Badge de cache "⚡ sem consumo".
+    Spinner durante análise (`animate-spin`). Layout: botões contextuais abaixo de `InvoiceCards`.
+  - `commitParsedEntries` extraído em `import-pipeline.ts` (dedupe cross-source OFX+vision).
+  - `settings.ts` + `ApiKeySettings.tsx`: chave BYO no localStorage, nunca no servidor.
+  - `SampleButton.tsx` extraído de `UploadButton.tsx` — "Carregar exemplo" movido para o final.
+- **M6 ✅** Polimento e filtros (Split e Budgets **adiados** — ver decisão abaixo). 67 testes.
+  - **Cores de categoria estáveis:** `categoryColor.ts` (`colorForCategory`, hash djb2) substitui a cor
+    posicional do donut. Mesma categoria → mesma cor sempre. Usado em `SpendingChart`, chips de
+    `TransactionsTable` e `ProjectedView`.
+  - **Projeção legível:** linha do `ProjectedView` reestruturada em 2 linhas + tooltip (descrição não
+    fica mais espremida na coluna estreita de mês futuro).
+  - **Header organizado:** `SettingsMenu.tsx` (engrenagem) agrupa Contas/Recorrentes/Exportar/Limpar.
+    Filhos ficam montados enquanto aberto (dialogs nativos vivem dentro do container → clique em modal
+    conta como "dentro").
+  - **Filtro de conta global:** `AccountFilterContext` (irmão do `MonthContext`) + `AccountFilter.tsx`
+    (pills). Predicado central **`matchesFilters(entry, {month, accountId})`** em `lib/filters.ts` —
+    único ponto de verdade, aplicado em SummaryCards/SpendingChart/TransactionsTable/InvoiceCards e em
+    `getProjectedMonth`. `accountId` = `number | 'all' | 'manual'`. Filtro só aparece com mês selecionado.
+  - **Override de recorrente por mês:** schema **v3** + tabela `recurringOverrides`
+    `{recurringItemId, month, amountCents?, skip?}`. `getProjectedMonth` consulta o override (preserva o
+    invariante "nunca materializar projeção"). `ProjectedView`: linha "fixo" editável (ajustar valor só
+    daquele mês), "pular este mês" (vai pro rodapé "Ocultos este mês" com "restaurar"), e reset (✕).
+    Helpers em `lib/recurringOverrides.ts`.
+- **Decisão M6:** Split e Budgets foram **tirados do escopo** após discussão. Budget revelou que a tabela
+  `categories` está morta (categorias são só strings em `entry.category`); e o que o João quer é maior —
+  um sistema de **categorias-mestre** (Custos fixos/Conforto/Metas/Prazeres/Liberdade financeira/
+  Conhecimento) que reclassifica todo gasto, com charts na aba "Todos". Isso + Split viram **M7+**.
+  Ver `PLAN.md §10`. Débito quitado de M6: `matchesFilters` começou a centralizar os totais (hoje ainda
+  há `reduce(+amountCents)` inline em alguns componentes) — base para quando o Split chegar.
+- **Next: M7** — definir entre **categorias-mestre** (50/30/20, o desejo do João) ou **Split/empréstimos**
+  (modelo de dados a decidir). Ver `PLAN.md §10`.
 
 ## Working style (important)
 João is a strong Angular engineer learning React/Next.js. He has explicitly asked to:

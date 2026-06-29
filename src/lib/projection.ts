@@ -1,5 +1,6 @@
 import { db } from './db';
 import { addMonths, monthDiff } from './format';
+import { matchesAccount, type AccountFilter } from './filters';
 
 /** Removes embedded installment text from OFX descriptions so the badge is the single source of truth. */
 export function stripInstallmentText(description: string): string {
@@ -18,6 +19,8 @@ export interface ProjectedItem {
   category: string;
   accountId?: number;
   installment?: { current: number; total: number };
+  recurringItemId?: number; // set for recurring items — lets the UI edit this month's override
+  overridden?: boolean;     // true when this month's amount came from a RecurringOverride
 }
 
 export interface ProjectedMonth {
@@ -34,21 +37,39 @@ export interface ProjectedMonth {
  *
  * Never materializes data into the DB — always derived on-the-fly.
  * Safe to call inside useLiveQuery so it reacts to DB changes automatically.
+ *
+ * `accountFilter` scopes the projection to match the global account filter:
+ *   - 'all'      → recurring items + every installment
+ *   - a number   → only that account's installments (recurring items have no account)
+ *   - 'manual'   → only items without an account (i.e. recurring items)
  */
-export async function getProjectedMonth(targetMonth: string): Promise<ProjectedMonth> {
+export async function getProjectedMonth(
+  targetMonth: string,
+  accountFilter: AccountFilter = 'all',
+): Promise<ProjectedMonth> {
   const items: ProjectedItem[] = [];
 
   // ── 1. Recurring income and fixed expenses ──────────────────────────────
   const recurring = await db.recurringItems.toArray();
+  const overrides = await db.recurringOverrides.where('month').equals(targetMonth).toArray();
+  const overrideByItem = new Map(overrides.map(o => [o.recurringItemId, o]));
+
   for (const r of recurring) {
     if (targetMonth < r.activeFrom) continue;
     if (r.activeTo && targetMonth > r.activeTo) continue;
+
+    const override = r.id !== undefined ? overrideByItem.get(r.id) : undefined;
+    if (override?.skip) continue; // this month is explicitly skipped
+    const overriddenAmount = override?.amountCents;
+
     items.push({
       description: r.description,
-      amountCents: r.amountCents,
+      amountCents: overriddenAmount ?? r.amountCents,
       direction: r.direction,
       type: 'recurring',
       category: r.category,
+      recurringItemId: r.id,
+      overridden: overriddenAmount !== undefined,
     });
   }
 
@@ -80,13 +101,16 @@ export async function getProjectedMonth(targetMonth: string): Promise<ProjectedM
     });
   }
 
-  const totalIncomeCents = items
+  // Scope to the active account filter (same rules as real entries via matchesAccount).
+  const filtered = items.filter(i => matchesAccount(i.accountId, accountFilter));
+
+  const totalIncomeCents = filtered
     .filter(i => i.direction === 'income')
     .reduce((sum, i) => sum + i.amountCents, 0);
 
-  const totalExpenseCents = items
+  const totalExpenseCents = filtered
     .filter(i => i.direction === 'expense')
     .reduce((sum, i) => sum + i.amountCents, 0);
 
-  return { month: targetMonth, items, totalIncomeCents, totalExpenseCents };
+  return { month: targetMonth, items: filtered, totalIncomeCents, totalExpenseCents };
 }
