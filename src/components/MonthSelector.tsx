@@ -27,7 +27,7 @@ export function MonthSelector() {
 
   return (
     <div className="flex items-center gap-1 mb-6 overflow-x-auto pb-1">
-      <Tab label="Todos" active={selectedMonth === ''} onClick={() => setSelectedMonth('')} />
+      <Tab label="Geral" active={selectedMonth === ''} onClick={() => setSelectedMonth('')} />
 
       {/* Past and current months — newest first */}
       {pastMonths.map(m => (

@@ -11,17 +11,24 @@
  * Hash: djb2 — the same lightweight, synchronous fingerprint used by the vision cache.
  */
 
-/** Shared category palette. Keep these visually distinct. */
+/** Shared category palette — 12 hues spread across the wheel for maximum distinctness. */
 export const CATEGORY_COLORS = [
   '#6366f1', // indigo
-  '#f59e0b', // amber
+  '#f97316', // orange
   '#10b981', // emerald
   '#ef4444', // red
+  '#06b6d4', // cyan
+  '#f59e0b', // amber
   '#8b5cf6', // violet
-  '#f97316', // orange
-  '#14b8a6', // teal
+  '#84cc16', // lime
   '#ec4899', // pink
+  '#14b8a6', // teal
+  '#3b82f6', // blue
+  '#f43f5e', // rose
 ] as const;
+
+/** Neutral colour for the "Outros" bucket. */
+export const OUTROS_COLOR = '#a1a1aa';
 
 /** djb2 fingerprint → unsigned int. Same family as importers/vision.ts. */
 function djb2(str: string): number {
