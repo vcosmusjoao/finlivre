@@ -10,7 +10,7 @@ Treat it as a learning project AND a portfolio piece.
 - `FIRST_SESSION.md` — what to tackle in the next session (updated after every milestone).
 - `docs/nextjs-notes.md` — Next.js mental model with Angular bridges (João is learning Next.js).
 
-## Current state (as of 2026-06-29)
+## Current state (as of 2026-06-30)
 - **M1 ✅** OFX import, categorization, spending chart, sample data, Vercel deploy.
 - **M2 ✅** Manual entries, income/expense, month filter, billing cycle (`billingMonth`).
 - **M3 ✅** Accounts (color-coded), recurring items, future month projections (on-the-fly),
@@ -26,39 +26,33 @@ Treat it as a learning project AND a portfolio piece.
   - `commitParsedEntries` extraído em `import-pipeline.ts` (dedupe cross-source OFX+vision).
   - `settings.ts` + `ApiKeySettings.tsx`: chave BYO no localStorage, nunca no servidor.
   - `SampleButton.tsx` extraído de `UploadButton.tsx` — "Carregar exemplo" movido para o final.
-- **M6 ✅** Polimento e filtros (Split e Budgets **adiados** — ver decisão abaixo). 67 testes.
-  - **Cores de categoria estáveis:** `categoryColor.ts` (`colorForCategory`, hash djb2) substitui a cor
-    posicional do donut. Mesma categoria → mesma cor sempre. Usado em `SpendingChart`, chips de
-    `TransactionsTable` e `ProjectedView`.
-  - **Projeção legível:** linha do `ProjectedView` reestruturada em 2 linhas + tooltip (descrição não
-    fica mais espremida na coluna estreita de mês futuro).
-  - **Header organizado:** `SettingsMenu.tsx` (engrenagem) agrupa Contas/Recorrentes/Exportar/Limpar.
-    Filhos ficam montados enquanto aberto (dialogs nativos vivem dentro do container → clique em modal
-    conta como "dentro").
-  - **Filtro de conta global:** `AccountFilterContext` (irmão do `MonthContext`) + `AccountFilter.tsx`
-    (pills). Predicado central **`matchesFilters(entry, {month, accountId})`** em `lib/filters.ts` —
-    único ponto de verdade, aplicado em SummaryCards/SpendingChart/TransactionsTable/InvoiceCards e em
-    `getProjectedMonth`. `accountId` = `number | 'all' | 'manual'`. Filtro só aparece com mês selecionado.
-  - **Override de recorrente por mês:** schema **v3** + tabela `recurringOverrides`
-    `{recurringItemId, month, amountCents?, skip?}`. `getProjectedMonth` consulta o override (preserva o
-    invariante "nunca materializar projeção"). `ProjectedView`: linha "fixo" editável (ajustar valor só
-    daquele mês), "pular este mês" (vai pro rodapé "Ocultos este mês" com "restaurar"), e reset (✕).
-    Helpers em `lib/recurringOverrides.ts`.
-- **Decisão M6:** Split e Budgets foram **tirados do escopo** após discussão. Budget revelou que a tabela
-  `categories` está morta (categorias são só strings em `entry.category`); e o que o João quer é maior —
-  um sistema de **categorias-mestre** (Custos fixos/Conforto/Metas/Prazeres/Liberdade financeira/
-  Conhecimento) que reclassifica todo gasto, com charts na aba "Todos". Isso + Split viram **M7+**.
-  Ver `PLAN.md §10`. Débito quitado de M6: `matchesFilters` começou a centralizar os totais (hoje ainda
-  há `reduce(+amountCents)` inline em alguns componentes) — base para quando o Split chegar.
-- **Pós-M6 (hotfixes):**
-  - **Formato de data:** `lib/format.ts` ganhou `formatDate(yyyyMMdd)` (string split, sem `new Date` para
-    evitar bug de timezone UTC). `TransactionsTable` exibe `16/06/2026` em vez de `2026-06-16`.
-- **Batch categorization ✅** — multi-select na tabela + bulk assign + `MerchantRule` retroativo.
-  Checkboxes sempre visíveis, action bar flutuante (dark pill), dialog de confirmação retroativa.
-  `TransactionsTable` agora inclui título dinâmico ("Lançamentos de jun/26") + contador.
-- **Next: M7** — decidir entre **categorias-mestre** ou **Split/Cobranças**. Ver `PLAN.md §10`.
-- **M7**: decidir entre **categorias-mestre** (50/30/20, o desejo do João) ou
-  **Split/empréstimos** (modelo de dados a decidir). Ver `PLAN.md §10`.
+- **M6 ✅** Polimento e filtros (Split e Budgets **adiados**). 67 testes.
+  - **Cores de categoria estáveis:** `categoryColor.ts` (`colorForCategory`, hash djb2).
+  - **Filtro de conta global:** `AccountFilterContext` + `AccountFilter.tsx` (pills).
+    Predicado central **`matchesFilters(entry, {month, accountId})`** em `lib/filters.ts`.
+  - **Override de recorrente por mês:** schema v3 + tabela `recurringOverrides`.
+  - **Pós-M6:** `formatDate` sem `new Date` (evita bug UTC), batch categorization (multi-select +
+    action bar flutuante + `MerchantRule` retroativo), título dinâmico na `TransactionsTable`.
+- **M7 ✅** Navegação App Router (Dashboard | Lançamentos). Comprometido em `3c9d22b`.
+  - **`src/components/AppShell.tsx`** — shell persistente (header + Navigation + MonthSelector +
+    AccountFilter + `{children}`). Vive no `layout.tsx` raiz; sobrevive à troca de rota.
+  - **`src/components/Navigation.tsx`** — 2 abas com `usePathname` para estado ativo + `Link`
+    (client-side navigation sem reload).
+  - **`src/app/dashboard/page.tsx`** — 3 estados: Geral (só charts), mês passado/atual
+    (SummaryCards + InvoiceCards + SpendingChart + TransactionsTable 1/3+2/3 + ProjectedView se atual
+    + IncomeExpenseChart), mês futuro (SummaryCards + placeholder dashed + link para Lançamentos).
+  - **`src/app/lancamentos/page.tsx`** — sempre mostra SummaryCards + botões de importação +
+    ExportButton. Mês futuro → `ProjectedView` em card "Compromissos previstos". Mês real →
+    `TransactionsTable`. Raiz: `src/app/page.tsx` redireciona para `/dashboard` via `redirect()`.
+  - **Arquitetura decidida:** Dashboard = analytics/retrospectiva. Lançamentos = todos os
+    lançamentos (reais ou projetados). Aba Planejamento **removida** — retorna em M8 com conteúdo
+    real (categorias-mestre, metas, reservas).
+  - **SettingsMenu** (engrenagem): `AccountsManager` + `RecurringItemsManager` + `ClearDataButton`.
+    `MonthSelector` e `AccountFilter` ficam no `AppShell` (globais; sobrevivem à navegação).
+  - **SpendingChart:** top 6 categorias + bucket "Outros" (cor `#a1a1aa`). Paleta expandida 8→12
+    cores (`CATEGORY_COLORS` em `lib/categoryColor.ts`, `OUTROS_COLOR` adicionado).
+  - **"Todos" → "Geral"** (pill no `MonthSelector`).
+- **Next: M8** — Categorias-mestre (50/30/20). Ver `PLAN.md §10` e `FIRST_SESSION.md`.
 
 ## Working style (important)
 João is a strong Angular engineer learning React/Next.js. He has explicitly asked to:

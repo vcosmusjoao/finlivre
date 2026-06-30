@@ -135,16 +135,32 @@ backup button, because clearing browser data wipes IndexedDB.
     desejo real do João é maior — categorias-mestre; Split toca todos os totais e merece desenho
     próprio). Empacotar os dois arriscava não fechar a milestone.
 
+- **Milestone 7 — navegação App Router.** ✅ Comprometido em `3c9d22b` em 2026-06-30.
+  - **App Router routes:** `src/app/dashboard/page.tsx` e `src/app/lancamentos/page.tsx`.
+    `src/app/page.tsx` redireciona para `/dashboard` via `redirect()`.
+  - **`AppShell`** — shell persistente no `layout.tsx` raiz. Mantém header, `Navigation`,
+    `MonthSelector`, `AccountFilter` vivos durante navegação entre rotas (equivalente ao
+    `router-outlet` do Angular, mas o shell é o que *fica* e `{children}` é o que troca).
+  - **`Navigation`** — `usePathname()` para aba ativa + `Link` para client-side navigation.
+  - **Dashboard:** 3 estados — Geral (só charts agregados), mês passado/atual (charts + tabela
+    em grid 1/3+2/3 + ProjectedView se mês atual), mês futuro (placeholder + link p/ Lançamentos).
+  - **Lançamentos:** SummaryCards + botões de importação/exportação. Mês futuro → `ProjectedView`
+    em card "Compromissos previstos". Mês real → `TransactionsTable`.
+  - **Aba Planejamento removida** — retorna em M8 com conteúdo real (categorias-mestre, metas).
+  - **SpendingChart:** top 6 + bucket "Outros" (`OUTROS_COLOR = '#a1a1aa'`). Paleta 8 → 12 cores.
+  - **"Todos" → "Geral"** no `MonthSelector`.
+  - **SettingsMenu** (global): `AccountsManager` + `RecurringItemsManager` + `ClearDataButton`.
+
 ## 10. Parked ideas (v2+ — do not build during M1)
-- **Categorias-mestre (forte candidato a M7 — desejo explícito do João):** um segundo nível de
-  taxonomia acima das categorias de comerciante. Baldes: **Custos fixos, Conforto, Metas, Prazeres,
-  Liberdade financeira, Conhecimento**. Cada gasto é reclassificado num balde; a aba "Todos" ganha
-  charts por balde. É o "patamar de análise" que ele descreveu ("analisar tudo que você gasta e
-  encaixar nisso"). Implica: campo de balde por categoria (ou mapa categoria→balde), roll-up de
-  totais, nova UI de classificação, charts no `AllTimeDashboard`. Maior poder de planejamento, mais
-  setup do usuário — é uma milestone inteira, não um adendo. Nota: a tabela `categories` (com
-  `monthlyBudgetCents`/`color`) está **morta** hoje (categorias são só strings em `entry.category`);
-  esta feature é o que justifica ressuscitá-la.
+- **Categorias-mestre (M8 — desejo explícito do João):** um segundo nível de taxonomia acima das
+  categorias de comerciante. Baldes: **Custos fixos, Conforto, Metas, Prazeres, Liberdade
+  financeira, Conhecimento**. Cada gasto é reclassificado num balde; a aba **Planejamento** (que
+  retorna em M8) ganha charts por balde e uma visão 50/30/20. É o "patamar de análise" que o João
+  descreveu. Implica: campo de balde por categoria (ou mapa categoria→balde), roll-up de totais,
+  nova UI de classificação, charts no `AllTimeDashboard`. Maior poder de planejamento, mais setup
+  do usuário — é uma milestone inteira. Nota: a tabela `categories` (com `monthlyBudgetCents`/`color`)
+  está **morta** hoje (categorias são só strings em `entry.category`); esta feature é o que
+  justifica ressuscitá-la.
 - AI fallback for low-confidence lines / unknown merchants (optional toggle).
 - MCP server so Claude Desktop can categorize a statement and save a report.
 - Supabase + auth + multi-device sync.
