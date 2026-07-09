@@ -18,15 +18,18 @@ export default function LancamentosPage() {
   return (
     <>
       <SummaryCards />
-      <div className="flex items-center justify-between mb-4">
-        <div className="flex items-start gap-3">
-          <ManualEntryForm />
-          <UploadButton />
-          <VisionImportButton />
-          <SampleButton />
+      {/* Import/export only makes sense in a specific month — hide on "Geral" */}
+      {selectedMonth && (
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-start gap-3">
+            <ManualEntryForm />
+            <UploadButton />
+            <VisionImportButton />
+            <SampleButton />
+          </div>
+          <ExportButton />
         </div>
-        <ExportButton />
-      </div>
+      )}
 
       {isFuture ? (
         <div className="bg-white dark:bg-zinc-900 rounded-xl border border-zinc-200 dark:border-zinc-800 p-6">

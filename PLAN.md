@@ -151,6 +151,67 @@ backup button, because clearing browser data wipes IndexedDB.
   - **"Todos" → "Geral"** no `MonthSelector`.
   - **SettingsMenu** (global): `AccountsManager` + `RecurringItemsManager` + `ClearDataButton`.
 
+- **Milestone 8 — categorias-mestre (baldes 50/30/20).** ✅ Concluído em 2026-06-30.
+  Segundo nível de taxonomia acima das categorias de comerciante, com a aba **Planejamento** de volta
+  como área visual de *decisão* ("onde cortar"). Decisões travadas com o João:
+  - **Modelo de dados (decidido — duas tabelas Dexie, schema v4):** `buckets` configurável
+    `{ name, type, targetPercent, color, order }` + `categoryBuckets { category (PK), bucketId }` (uma
+    categoria por balde, espelha `merchantRules`). Escolhido sobre `entry.bucket` (reclassificação cara) e
+    sobre ressuscitar `categories` (exigiria migrar strings) — config de % torna o balde um *dado*.
+  - **Base do cálculo:** receita total do mês (`direction: 'income'`); meta do balde = `targetPercent × renda_do_mês`.
+  - **`type: 'gasto' | 'meta'`** — metáfora do líquido inverte: gasto cheio = alerta; meta cheia = vitória.
+  - **Metas não somam 100%** (aviso suave). **Default 50/30/20** já aplicado (sem pedágio de setup).
+  - **"Sobra do mês"** = `renda − despesas` → indicador derivado (cobre o "20%", sem exigir aporte logado).
+  - **Visual herói:** balde com líquido **animado** (encher/transbordar). **Insights determinísticos** (sem IA).
+  - **Roll-up é função pura testável** (`src/lib/buckets.ts`, espelha `getProjectedMonth`), reusa `matchesFilters`.
+  - Arquivos: `lib/buckets.ts`, `lib/bucketPresets.ts`, `app/planejamento/page.tsx`, `components/BucketsView.tsx`,
+    `components/BucketSettings.tsx`, `lib/__tests__/buckets.test.ts`; edita `db.ts` (v4) e `Navigation.tsx`.
+  - **Arquivos entregues:** `lib/db.ts` (v4), `lib/bucketPresets.ts`, `lib/buckets.ts` (6 fns puras/async),
+    `lib/__tests__/buckets.test.ts` (36 testes), `components/BucketSettings.tsx`,
+    `components/BucketsView.tsx` (SVG animado SMIL), `app/planejamento/page.tsx`.
+  - **Bugs corrigidos no fechamento:** (1) Planejamento ignora filtro de conta — usa `accountId:'all'`
+    por design. (2) `AccountFilter` oculto no AppShell na rota `/planejamento`. (3) `selectSmCls`
+    separado do `inputCls` no BucketSettings (evita `w-full` sobrescrever `w-44`). (4) Aviso de soma
+    substituído por mensagem clara sobre "Sobra do mês" quando soma < 100%.
+  - **Bugs adicionais corrigidos pós-entrega:** (5) `rollupBuckets` não incluía recorrentes (aluguel,
+    assinaturas) — corrigido para somar `getProjectedMonth` no mês corrente/futuro, espelhando
+    `SummaryCards`. (6) Lista de categorias no `BucketSettings` incluía receitas ("Salário") — corrigido
+    para combinar só `direction:'expense'` de entries + recurringItems. (7) `currentMonth()` usava UTC
+    (`toISOString().slice(0,7)`) e retornava o mês seguinte após 21h no Brasil (UTC-3) — corrigido para
+    usar hora local. Esse bug causava: julho sumindo do seletor, recorrentes aparecendo 2 meses atrasados,
+    e cálculo de renda errado no Planejamento. (8) "Sobra do mês" → "Poupança do mês" com comparação
+    "Meta X% → Real Y%". (9) Mini-resumo Receita/Gastos/Saldo adicionado no topo do Planejamento.
+  - Ver `FIRST_SESSION.md` para o roteiro do sprint de visibilidade (pós-M8) e spec do M9.
+
+- **Milestone 9 — tela de revisão unificada para imports.** ⏳ Especificada em 2026-06-30.
+  Hoje OFX é importado diretamente (sem revisão) enquanto Vision/PDF tem tela de revisão. O objetivo
+  é unificar: todo import passa por uma tela de revisão que mostra o mês de destino e permite corrigir
+  antes de gravar. Decisões tomadas:
+  - **Por quê:** o usuário não consegue ver nem corrigir erros de `billingMonth` antes do commit no
+    OFX. Com Vision ele pode. Consistência e segurança exigem o mesmo fluxo para todas as fontes.
+  - **Modelo:** extrair `ImportReviewTable` como componente compartilhado de `VisionImportButton.tsx`.
+    O OFX (`UploadButton.tsx`) passa a chamar `ofxImporter.parse()` → mostrar a mesma tabela de
+    revisão → `commitParsedEntries` só ao confirmar.
+  - **Coluna "Mês":** a tabela de revisão ganha coluna `effectiveMonth(entry)` com um `<select>` para
+    o usuário corrigir o `billingMonth` de cada entry (ou de todas de uma vez) antes de confirmar.
+  - **Fluxo unificado:**
+    ```
+    OFX hoje:    arquivo → parse → commitParsedEntries (imediato)
+    M9:          arquivo → parse → ImportReviewTable (mês visível/editável) → confirmar → commit
+
+    Vision hoje: arquivo → AI → ImportReviewTable → confirmar → commit
+    M9:          sem mudança (já está assim)
+    ```
+  - **Não muda:** `commitParsedEntries` e a lógica de dedupe por hash — são o núcleo estável.
+  - **Arquivos a tocar:** `components/VisionImportButton.tsx` (extrai tabela), novo
+    `components/ImportReviewTable.tsx`, `components/UploadButton.tsx` (plugar a tabela),
+    `lib/importers/ofx.ts` (garantir que `billingMonth` está sendo preenchido corretamente).
+  - **UX já corrigido (antecipado do M9):**
+    - `Geral` (selectedMonth = '') não exibe botões de importação/exportação — não faz sentido
+      importar sem um mês selecionado. Corrigido em `app/lancamentos/page.tsx`.
+    - Mês atual sempre visível no `MonthSelector` mesmo sem entries — `set.add(now)` antes de
+      filtrar. Corrigido em `components/MonthSelector.tsx`.
+
 ## 10. Parked ideas (v2+ — do not build during M1)
 - **Categorias-mestre (M8 — desejo explícito do João):** um segundo nível de taxonomia acima das
   categorias de comerciante. Baldes: **Custos fixos, Conforto, Metas, Prazeres, Liberdade

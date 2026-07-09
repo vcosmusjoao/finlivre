@@ -15,7 +15,8 @@ export function MonthSelector() {
   const pastMonths = useLiveQuery(() =>
     db.entries.toArray().then(entries => {
       const set = new Set(entries.map(e => effectiveMonth(e)));
-      return [...set].filter(m => m <= now).sort().reverse(); // past + current only, newest first
+      set.add(now); // current month always visible, even with no entries yet
+      return [...set].filter(m => m <= now).sort().reverse();
     })
   , [now], [] as string[]);
 

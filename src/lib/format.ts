@@ -11,7 +11,9 @@ export function monthLabel(yyyyMM: string): string {
 }
 
 export function currentMonth(): string {
-  return new Date().toISOString().slice(0, 7); // 'yyyy-MM'
+  // Use local date — toISOString() returns UTC and would advance the month for UTC-3 users after 21h.
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
 }
 
 export function addMonths(yearMonth: string, n: number): string {

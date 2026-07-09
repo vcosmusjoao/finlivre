@@ -86,6 +86,23 @@ export interface RecurringOverride {
   skip?: boolean;        // true = the recurring item does not apply this month
 }
 
+export type BucketType = 'gasto' | 'meta';
+
+export interface Bucket {
+  id?: number;
+  name: string;
+  type: BucketType;        // 'gasto' = stay below target; 'meta' = reach target
+  targetPercent: number;   // 0–100, % of monthly income
+  color: string;           // hex
+  order: number;
+}
+
+/** One category belongs to at most one bucket. category is the PK (mirrors MerchantRule). */
+export interface CategoryBucket {
+  category: string;  // PK — matches entry.category
+  bucketId: number;
+}
+
 class FinLivreDB extends Dexie {
   entries!: Table<Entry, number>;
   accounts!: Table<Account, number>;
@@ -94,6 +111,8 @@ class FinLivreDB extends Dexie {
   invoiceStatements!: Table<InvoiceStatement, number>;
   recurringItems!: Table<RecurringItem, number>;
   recurringOverrides!: Table<RecurringOverride, number>;
+  buckets!: Table<Bucket, number>;
+  categoryBuckets!: Table<CategoryBucket, string>;
 
   constructor() {
     super("finlivre");
@@ -122,6 +141,18 @@ class FinLivreDB extends Dexie {
       invoiceStatements: "++id, accountId, month, [accountId+month]",
       recurringItems: "++id, direction",
       recurringOverrides: "++id, recurringItemId, month, [recurringItemId+month]",
+    });
+    // v4: adds buckets + categoryBuckets for the 50/30/20 planning layer (M8).
+    this.version(4).stores({
+      entries: "++id, date, category, direction, accountId, hash",
+      accounts: "++id, name",
+      categories: "++id, name",
+      merchantRules: "merchant",
+      invoiceStatements: "++id, accountId, month, [accountId+month]",
+      recurringItems: "++id, direction",
+      recurringOverrides: "++id, recurringItemId, month, [recurringItemId+month]",
+      buckets: "++id, order",
+      categoryBuckets: "category, bucketId",
     });
   }
 }

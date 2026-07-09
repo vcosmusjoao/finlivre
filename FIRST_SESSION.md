@@ -1,70 +1,90 @@
-# Start here — next session (M8)
+# Start here — sprint de visibilidade (pós M8) + spec M9
 
-Open this folder (`C:\dev\finlivre`) in Claude Code.
-M1 → M7 complete. Start by reading PLAN.md §10.
+M1 → M8 estão completos e estabilizados.
 
-## 0. Orient (2 min)
-- 67 tests passing. TypeScript clean. Build clean.
-- Two routes live: `/dashboard` and `/lancamentos`. AppShell persists across navigation.
-- Next: **M8 — Categorias-mestre** (João's explicit wish, top of §10 in PLAN.md).
+## Estado atual (2026-06-30, fim do dia)
 
-## 1. M8 — Categorias-mestre (50/30/20)
+### M8 ✅ completo — bugs incluídos
+- Baldes 50/30/20, SVG animado SMIL, aba Planejamento, BucketSettings, 36 novos testes.
+- **Bugs corrigidos pós-entrega (mesma sessão):**
+  1. `rollupBuckets` não somava recorrentes → corrigido para incluir `getProjectedMonth`
+     no mês corrente/futuro (espelha `SummaryCards`).
+  2. `BucketSettings` mostrava categorias de receita (Salário) → corrigido para filtrar
+     só `direction:'expense'` de entries + recurringItems.
+  3. **`currentMonth()` usava `toISOString()` (UTC)** → retornava mês seguinte após 21h
+     no Brasil (UTC-3). Corrigido para usar hora local (`d.getFullYear()`, `d.getMonth()`).
+     Esse bug único causava: julho sumindo do seletor, recorrentes aparecendo 2 meses
+     atrasados, e renda do Planejamento calculada errada.
+  4. "Sobra do mês" → "Poupança do mês" com "Meta X% → Real Y%".
+  5. Mini-resumo Receita/Gastos/Saldo adicionado no topo do Planejamento.
+  6. `AppShell` oculta `AccountFilter` na rota `/planejamento`.
+  7. `planejamento/page.tsx` usa `accountId:'all'` (ignora filtro de conta por design).
 
-A second taxonomy tier above merchant categories. Every spend gets a **balde** (bucket);
-the Planejamento tab (removed in M7, returns in M8) shows per-bucket charts.
+### Testes: 103 passando
 
-### The buckets (João's list)
-**Custos fixos · Conforto · Metas · Prazeres · Liberdade financeira · Conhecimento**
+---
 
-### What this touches — design the data model before coding
-The key decision: **where does the bucket live?**
+## O que vem agora (em ordem)
 
-**Option A — field on Entry directly** (`entry.bucket`):
-- Simplest. Set on import/categorization. No join needed.
-- Problem: same merchant ("Spotify") might be "Conforto" for João but "Metas" for someone else.
-  Also: when João reclassifies a bucket, he'd need to update all past entries.
+### 1. Sprint de visibilidade — NÃO é feature
 
-**Option B — bucket on Category** (`category.bucket`):
-- The `categories` table is already in Dexie but dead (categories are just strings on `entry.category`).
-  Reviving it: `{ name, bucket? }`. A bucket roll-up = join Entry → Category → bucket.
-- Problem: `entry.category` is a free string, not a FK. Multiple entries can share the same
-  category string but there's no guarantee a `Category` row exists for it.
-- Solution: auto-create `Category` rows from distinct `entry.category` values (migration).
+**Não adicionar mais features antes disso.** O padrão do João é escopo crescente → projeto
+inacabado. O README e o LinkedIn são o que transforma o trabalho técnico em portfólio visível.
 
-**Option C — a standalone `categoryBuckets` map** (`{ category: string, bucket: string }`):
-- No schema change to `Entry` at all. A separate lookup table. Simplest migration path.
-- Roll-up: `effectiveAmountCents` × bucket = look up `categoryBuckets[entry.category]`.
-- This is the **recommended starting point** — discuss with João.
+**README (prioridade máxima):**
+- Live URL (Vercel) no topo.
+- Screenshots: Dashboard, Lançamentos (import OFX + Vision), Planejamento (baldes animados).
+- Seção em inglês — público-alvo = recrutadores internacionais.
+- Decisões técnicas para recrutadores:
+  - Local-first (IndexedDB/Dexie v4, schema migrations v1→v4), zero backend.
+  - OFX parser determinístico + Claude Vision BYO-key, browser-direct.
+  - SVG animado via SMIL (`<animateTransform>`) — CSS transforms em SVG usam pixels CSS,
+    não unidades SVG. SMIL opera no sistema de coordenadas SVG diretamente.
+  - Arquitetura "tudo é Entry" — fontes (OFX/Vision/manual/recorrente) são apenas importers;
+    o ledger é a única fonte de verdade.
+  - `matchesFilters` e `effectiveMonth` como predicados únicos que todos reutilizam.
 
-### The Planejamento tab returns in M8
-In M7 we removed it because it had no real content. In M8 it should contain:
-- Per-bucket spending chart (the 50/30/20 view)
-- A classification UI: "for each merchant category, pick a bucket"
-- Future: investment goals, reserve targets
+**LinkedIn:** post curto em inglês, link Vercel, stack, narrativa "built it to use it".
 
-### Dexie schema impact
-- Schema is currently at **v3**. Adding `categoryBuckets` table = **v4**.
-- Remember: Dexie version bump requires adding to the `db.version(4).stores({...})` chain.
-  Do NOT edit the existing `version(3)` block.
+**GitHub:** repositório público, description + topics, pinned no perfil.
 
-## 2. Session flow (recommended)
-1. Read PLAN.md §10 together (Categorias-mestre entry at the top).
-2. **Design the data model first.** Compare Options A/B/C above. João should pick.
-3. Design the classification UX: how does the user assign buckets to categories?
-4. Only then: implement. Start with the data layer (Dexie table + migration), then charts.
-5. João should be taught, not handed finished code. Explain every decision, relate to Angular.
+### 2. M9 — tela de revisão unificada para imports
 
-## 3. Reminders
-- Money is always integer **cents** (`amountCents`).
-- Dexie = Client Component (`'use client'`). Schema is at **v3** (`recurringOverrides` added in M6).
-- All `<dialog>` modals need `fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2`.
-- New idea mid-build? → PLAN.md §10 "Parked". Ask: "does this block M8?" If not → park it.
-- Run `npm test` — 67 tests must stay green before any commit.
-- `useLiveQuery` with array default: always `[] as MyType[]`, not bare `[]`.
-- `matchesFilters` in `lib/filters.ts` is the single filter predicate. Reuse; don't re-roll.
-- Category colors are deterministic via `lib/categoryColor.ts → colorForCategory` (no DB).
-- **App Router structure:** `src/app/layout.tsx` → `Providers` → `AppShell` → `{children}`.
-  `AppShell` lives in `src/components/AppShell.tsx` and is a Client Component.
-  Routes: `src/app/dashboard/page.tsx` and `src/app/lancamentos/page.tsx`.
-- `usePathname()` requires `'use client'` — it reads browser URL state.
-- `redirect()` in a Server Component does NOT need `'use client'`.
+**Spec completa em `PLAN.md §9 Milestone 9`.** Resumo executivo:
+
+**Problema:** OFX é importado diretamente (sem revisão). Vision/PDF tem tela de revisão.
+O usuário não consegue ver nem corrigir erros de `billingMonth` antes do commit no OFX.
+
+**Solução:** extrair `ImportReviewTable` como componente compartilhado de `VisionImportButton.tsx`.
+OFX passa a fazer: `parse → tela de revisão → confirmar → commitParsedEntries`.
+
+**Coluna "Mês":** a tabela de revisão exibe `effectiveMonth(entry)` com `<select>` para
+corrigir o `billingMonth` de cada entry (ou de todas de uma vez) antes de confirmar.
+
+**Arquivos a tocar:**
+- `components/VisionImportButton.tsx` — extrai tabela para componente separado
+- `components/ImportReviewTable.tsx` — novo componente compartilhado
+- `components/UploadButton.tsx` — plugar a tabela de revisão
+- `lib/importers/ofx.ts` — verificar que `billingMonth` está sendo preenchido
+
+**Não muda:** `commitParsedEntries` e dedupe por hash — são o núcleo estável.
+
+---
+
+## Decisões já travadas (não reabrir)
+
+- Local-first. Sem backend em v1. Sem sync multi-device.
+- Categorias-mestre via `buckets` + `categoryBuckets` (Dexie v4). Schema v4 estável.
+- `matchesFilters` é o único predicado de filtro. `effectiveMonth` é o único predicado de mês.
+- `currentMonth()` usa hora **local** (não UTC). Nunca voltar para `toISOString()`.
+- Planejamento ignora filtro de conta (visão global por design).
+- Money em `amountCents` (integer), nunca float.
+- `'use client'` em qualquer componente que toca Dexie.
+
+## Lembretes técnicos
+
+- `useLiveQuery` com default tipado: `[] as Bucket[]`, nunca `[]` cru.
+- `<dialog>` precisa de `fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2`.
+- SMIL `<animateTransform>` em vez de CSS transform para animação SVG.
+- SVG clipPath/animações: uid único por instância (`uid = String(bucket.id ?? bucket.name)`).
+- `npm test` antes de qualquer commit. 103 testes devem passar.

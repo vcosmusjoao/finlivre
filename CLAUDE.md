@@ -52,7 +52,12 @@ Treat it as a learning project AND a portfolio piece.
   - **SpendingChart:** top 6 categorias + bucket "Outros" (cor `#a1a1aa`). Paleta expandida 8→12
     cores (`CATEGORY_COLORS` em `lib/categoryColor.ts`, `OUTROS_COLOR` adicionado).
   - **"Todos" → "Geral"** (pill no `MonthSelector`).
-- **Next: M8** — Categorias-mestre (50/30/20). Ver `PLAN.md §10` e `FIRST_SESSION.md`.
+- **M8 ⏳** — Categorias-mestre (baldes 50/30/20). Design aprovado 2026-06-30; em implementação.
+  - **Modelo (decidido):** Dexie v4, duas tabelas — `buckets` `{name, type:'gasto'|'meta', targetPercent, color, order}`
+    + `categoryBuckets {category(PK), bucketId}` (espelha `merchantRules`). Base = renda do mês; metas não
+    somam 100% (aviso suave); default 50/30/20; "Sobra do mês" derivada. Visual herói: balde de líquido animado.
+    Roll-up puro em `lib/buckets.ts` (reusa `matchesFilters`). 3ª rota `/planejamento`.
+  - Roteiro completo de implementação em `FIRST_SESSION.md`; design fixado em `PLAN.md §9 Milestone 8`.
 
 ## Working style (important)
 João is a strong Angular engineer learning React/Next.js. He has explicitly asked to:
