@@ -1,51 +1,52 @@
 'use client';
 
 import { useState } from 'react';
-import { importOfx } from '@/lib/import-pipeline';
+import { parseOfx, commitReviewedImport, type ParsedOfx } from '@/lib/import-pipeline';
+import { currentMonth } from '@/lib/format';
 import { AccountPickerModal } from '@/components/AccountPickerModal';
+import { ImportReviewTable, type CommitInput } from '@/components/ImportReviewTable';
 
 export function UploadButton() {
-  const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<{ added: number; skipped: number } | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [pendingText, setPendingText] = useState<string | null>(null);
-
-  async function runImport(text: string, accountId?: number) {
-    setLoading(true);
-    setResult(null);
-    setError(null);
-    try {
-      const res = await importOfx(text, accountId);
-      setResult(res);
-    } catch {
-      setError('Erro ao importar o arquivo.');
-    } finally {
-      setLoading(false);
-    }
-  }
+  const [pendingParse, setPendingParse] = useState<ParsedOfx | null>(null);
+  const [reviewing, setReviewing] = useState<{ parsed: ParsedOfx; accountId?: number } | null>(null);
 
   async function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (!file) return;
     // Reset input so the same file can be re-selected after cancel
     e.target.value = '';
-    setPendingText(await file.text());
+    setResult(null);
+    setError(null);
+    const text = await file.text();
+    const parsed = parseOfx(text);
+    if (parsed.entries.length === 0) {
+      setError('Nenhuma transação encontrada no arquivo.');
+      return;
+    }
+    setPendingParse(parsed);
   }
 
-  function handleAccountPicked(accountId: number) {
-    const text = pendingText!;
-    setPendingText(null);
-    runImport(text, accountId);
+  function openReviewTable(accountId?: number) {
+    if (!pendingParse) return;
+    setReviewing({ parsed: pendingParse, accountId });
+    setPendingParse(null);
   }
 
-  function handleSkip() {
-    const text = pendingText!;
-    setPendingText(null);
-    runImport(text, undefined);
-  }
-
-  function handleCancel() {
-    setPendingText(null);
+  async function handleConfirm(input: CommitInput) {
+    try {
+      const res = await commitReviewedImport(input.entries, {
+        accountId: input.accountId,
+        billingMonth: input.billingMonth,
+        invoiceTotalCents: input.invoiceTotalCents,
+      });
+      setResult(res);
+    } catch {
+      setError('Erro ao importar o arquivo.');
+    } finally {
+      setReviewing(null);
+    }
   }
 
   return (
@@ -55,7 +56,6 @@ export function UploadButton() {
         Importar OFX
       </label>
 
-      {loading && <p className="text-xs text-zinc-500">Importando...</p>}
       {result && (
         <p className="text-xs text-emerald-600">
           {result.added} importadas{result.skipped > 0 && `, ${result.skipped} duplicatas`}.
@@ -64,10 +64,21 @@ export function UploadButton() {
       {error && <p className="text-xs text-red-500">{error}</p>}
 
       <AccountPickerModal
-        open={pendingText !== null}
-        onSelect={handleAccountPicked}
-        onSkip={handleSkip}
-        onCancel={handleCancel}
+        open={pendingParse !== null}
+        onSelect={openReviewTable}
+        onSkip={() => openReviewTable(undefined)}
+        onCancel={() => setPendingParse(null)}
+      />
+
+      <ImportReviewTable
+        open={reviewing !== null}
+        entries={reviewing?.parsed.entries ?? []}
+        source="ofx"
+        defaultAccountId={reviewing?.accountId}
+        defaultBillingMonth={reviewing?.parsed.billingMonth ?? currentMonth()}
+        defaultInvoiceTotalCents={reviewing?.parsed.invoiceTotalCents}
+        onConfirm={handleConfirm}
+        onCancel={() => setReviewing(null)}
       />
     </div>
   );

@@ -58,35 +58,61 @@ export async function commitParsedEntries(
   return { added: toInsert.length, skipped: entries.length - toInsert.length };
 }
 
+/** Result of parsing an OFX file, before any user review. */
+export interface ParsedOfx {
+  entries: ParsedEntry[];
+  billingMonth?: string;
+  invoiceTotalCents?: number;
+}
+
+/** Parses an OFX file into entries + invoice metadata. Does NOT touch the DB. */
+export function parseOfx(fileText: string): ParsedOfx {
+  const entries = ofxImporter.parse(fileText);
+  const meta = parseOfxMeta(fileText);
+  return { entries, billingMonth: meta.statementMonth, invoiceTotalCents: meta.ledgerBalanceCents };
+}
+
+async function saveInvoiceStatement(accountId: number, month: string, balanceCents: number): Promise<void> {
+  await db.invoiceStatements
+    .where('[accountId+month]')
+    .equals([accountId, month])
+    .delete()
+    .catch(() => {
+      // compound index may not exist in older DB versions — safe to ignore
+    });
+  await db.invoiceStatements.add({
+    accountId,
+    month,
+    balanceCents,
+    importedAt: new Date().toISOString(),
+  });
+}
+
+/**
+ * Commits entries that already went through the review table (OFX or vision/PDF —
+ * both land here after the user confirms). This is the one place that writes an
+ * InvoiceStatement, so the two import sources can't diverge on that logic.
+ */
+export async function commitReviewedImport(
+  entries: ParsedEntry[],
+  opts: { accountId?: number; billingMonth?: string; invoiceTotalCents?: number }
+): Promise<{ added: number; skipped: number }> {
+  const result = await commitParsedEntries(entries, opts.accountId);
+
+  if (opts.accountId !== undefined && opts.billingMonth && opts.invoiceTotalCents !== undefined && opts.invoiceTotalCents > 0) {
+    await saveInvoiceStatement(opts.accountId, opts.billingMonth, opts.invoiceTotalCents);
+  }
+
+  return result;
+}
+
+/** Direct, un-reviewed OFX import — used only for one-click sample/demo data. */
 export async function importOfx(
   fileText: string,
   accountId?: number
 ): Promise<{ added: number; skipped: number }> {
-  const entries = ofxImporter.parse(fileText);
-
-  const result = await commitParsedEntries(entries, accountId);
-
-  // Store LEDGERBAL as an InvoiceStatement so the invoice card can show it
-  if (accountId !== undefined) {
-    const meta = parseOfxMeta(fileText);
-    if (meta.ledgerBalanceCents !== undefined && meta.statementMonth) {
-      await db.invoiceStatements
-        .where('[accountId+month]')
-        .equals([accountId, meta.statementMonth])
-        .delete()
-        .catch(() => {
-          // compound index may not exist in older DB versions — safe to ignore
-        });
-      await db.invoiceStatements.add({
-        accountId,
-        month: meta.statementMonth,
-        balanceCents: meta.ledgerBalanceCents,
-        importedAt: new Date().toISOString(),
-      });
-    }
-  }
-
-  return result;
+  const { entries, billingMonth, invoiceTotalCents } = parseOfx(fileText);
+  return commitReviewedImport(entries, { accountId, billingMonth, invoiceTotalCents });
 }
 
 /** Creates a demo Nubank account (if not already present) and imports the sample OFX. */
