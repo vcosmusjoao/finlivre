@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
+import { useLocale } from '@/i18n/LocaleContext';
 
 /**
  * Groups the secondary management actions (contas, recorrentes, exportar, limpar)
@@ -14,6 +15,7 @@ import { useEffect, useRef, useState } from 'react';
 export function SettingsMenu({ children }: { children: React.ReactNode }) {
   const [open, setOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
+  const { t } = useLocale();
 
   useEffect(() => {
     if (!open) return;
@@ -29,9 +31,9 @@ export function SettingsMenu({ children }: { children: React.ReactNode }) {
       <button
         type="button"
         onClick={() => setOpen(o => !o)}
-        aria-label="Configurações"
+        aria-label={t.nav.settings}
         aria-expanded={open}
-        className="flex items-center justify-center w-8 h-8 rounded-lg border border-zinc-200 dark:border-zinc-700 text-zinc-500 dark:text-zinc-400 hover:border-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 transition-colors"
+        className="flex items-center justify-center w-8 h-8 rounded-lg border border-border text-muted-foreground hover:border-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 transition-colors"
       >
         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
           <circle cx="12" cy="12" r="3" />
@@ -40,7 +42,7 @@ export function SettingsMenu({ children }: { children: React.ReactNode }) {
       </button>
 
       {open && (
-        <div className="absolute right-0 top-full mt-2 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-xl shadow-lg p-3 z-20 flex flex-col items-start gap-2 min-w-max">
+        <div className="absolute right-0 top-full mt-2 bg-card border border-border rounded-xl shadow-lg p-3 z-20 flex flex-col items-start gap-2 min-w-max">
           {children}
         </div>
       )}

@@ -2,10 +2,12 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { db } from '@/lib/db';
+import { useLocale } from '@/i18n/LocaleContext';
 
 export function ExportButton() {
   const [open, setOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
+  const { t } = useLocale();
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -51,10 +53,7 @@ export function ExportButton() {
 
     const accountMap = new Map(accounts.map(a => [a.id!, a.name]));
 
-    const header = [
-      'Data', 'Descrição', 'Valor (R$)', 'Direção',
-      'Categoria', 'Conta', 'Parcela', 'Mês de cobrança', 'Fonte',
-    ];
+    const header = t.exportButton.csvHeaders;
 
     const rows = entries.map(e => [
       e.date,
@@ -82,22 +81,22 @@ export function ExportButton() {
       <button
         type="button"
         onClick={() => setOpen(o => !o)}
-        className="text-xs px-3 py-1.5 rounded-lg border border-zinc-200 dark:border-zinc-700 text-zinc-500 dark:text-zinc-400 hover:border-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 transition-colors"
+        className="text-xs px-3 py-1.5 rounded-lg border border-border text-muted-foreground hover:border-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 transition-colors"
       >
-        Exportar
+        {t.exportButton.button}
       </button>
 
       {open && (
-        <div className="absolute right-0 top-full mt-1 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-lg shadow-lg py-1 z-20 w-44">
+        <div className="absolute right-0 top-full mt-1 bg-card border border-border rounded-lg shadow-lg py-1 z-20 w-44">
           <button type="button" onClick={exportJSON}
-            className="w-full text-left px-3 py-2 text-xs hover:bg-zinc-50 dark:hover:bg-zinc-800 transition-colors">
-            <span className="font-medium text-zinc-700 dark:text-zinc-200">JSON</span>
-            <span className="text-zinc-400 ml-1.5">backup completo</span>
+            className="w-full text-left px-3 py-2 text-xs hover:bg-muted transition-colors">
+            <span className="font-medium text-body">{t.exportButton.jsonLabel}</span>
+            <span className="text-zinc-400 ml-1.5">{t.exportButton.jsonHint}</span>
           </button>
           <button type="button" onClick={exportCSV}
-            className="w-full text-left px-3 py-2 text-xs hover:bg-zinc-50 dark:hover:bg-zinc-800 transition-colors">
-            <span className="font-medium text-zinc-700 dark:text-zinc-200">CSV</span>
-            <span className="text-zinc-400 ml-1.5">para planilha</span>
+            className="w-full text-left px-3 py-2 text-xs hover:bg-muted transition-colors">
+            <span className="font-medium text-body">{t.exportButton.csvLabel}</span>
+            <span className="text-zinc-400 ml-1.5">{t.exportButton.csvHint}</span>
           </button>
         </div>
       )}

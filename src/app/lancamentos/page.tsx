@@ -10,9 +10,11 @@ import { ExportButton } from '@/components/ExportButton';
 import { SummaryCards } from '@/components/SummaryCards';
 import { TransactionsTable } from '@/components/TransactionsTable';
 import { ProjectedView } from '@/components/ProjectedView';
+import { useLocale } from '@/i18n/LocaleContext';
 
 export default function LancamentosPage() {
   const { selectedMonth } = useMonth();
+  const { t } = useLocale();
   const isFuture = !!selectedMonth && selectedMonth > currentMonth();
 
   return (
@@ -32,10 +34,10 @@ export default function LancamentosPage() {
       )}
 
       {isFuture ? (
-        <div className="bg-white dark:bg-zinc-900 rounded-xl border border-zinc-200 dark:border-zinc-800 p-6">
+        <div className="bg-card rounded-xl border border-border-subtle p-6">
           <div className="flex items-center gap-2 mb-4">
-            <h2 className="text-sm font-medium text-zinc-500 dark:text-zinc-400">Compromissos previstos</h2>
-            <span className="text-xs bg-indigo-50 dark:bg-indigo-950 text-indigo-500 px-2 py-0.5 rounded-full">projeção</span>
+            <h2 className="text-sm font-medium text-muted-foreground">{t.lancamentosPage.upcomingCommitments}</h2>
+            <span className="text-xs bg-primary/10 text-primary px-2 py-0.5 rounded-full">{t.lancamentosPage.projection}</span>
           </div>
           <ProjectedView />
         </div>

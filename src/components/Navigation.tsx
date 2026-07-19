@@ -2,19 +2,21 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-
-const TABS = [
-  { href: '/dashboard', label: 'Dashboard' },
-  { href: '/lancamentos', label: 'Lançamentos' },
-  { href: '/planejamento', label: 'Planejamento' },
-] as const;
+import { useLocale } from '@/i18n/LocaleContext';
 
 export function Navigation() {
   const pathname = usePathname();
+  const { t } = useLocale();
+
+  const tabs = [
+    { href: '/dashboard', label: t.nav.dashboard },
+    { href: '/lancamentos', label: t.nav.transactions },
+    { href: '/planejamento', label: t.nav.planning },
+  ] as const;
 
   return (
-    <nav className="flex gap-1 mb-6 border-b border-zinc-200 dark:border-zinc-800">
-      {TABS.map(({ href, label }) => {
+    <nav className="flex gap-1 mb-6 border-b border-border-subtle">
+      {tabs.map(({ href, label }) => {
         const active = pathname === href;
         return (
           <Link
@@ -22,8 +24,8 @@ export function Navigation() {
             href={href}
             className={`px-4 py-2 text-sm font-medium transition-colors border-b-2 -mb-px ${
               active
-                ? 'border-indigo-600 text-indigo-600 dark:text-indigo-400 dark:border-indigo-400'
-                : 'border-transparent text-zinc-500 dark:text-zinc-400 hover:text-zinc-800 dark:hover:text-zinc-200'
+                ? 'border-primary text-primary'
+                : 'border-transparent text-muted-foreground hover:text-zinc-800 dark:hover:text-zinc-200'
             }`}
           >
             {label}

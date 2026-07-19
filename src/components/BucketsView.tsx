@@ -5,6 +5,8 @@ import { formatBRL } from '@/lib/format';
 import { bucketProgress, bucketInsights } from '@/lib/buckets';
 import type { RollupResult, BucketRollup, BucketStatus } from '@/lib/buckets';
 import type { BucketType } from '@/lib/db';
+import { useLocale } from '@/i18n/LocaleContext';
+import type { Messages } from '@/i18n/messages/en';
 
 interface Props {
   rollup: RollupResult;
@@ -24,24 +26,24 @@ function liquidColor(type: BucketType, status: BucketStatus): string {
   return status === 'reached' ? '#22c55e' : '#6366f1';
 }
 
-function statusLabel(type: BucketType, status: BucketStatus): string {
+function statusLabel(type: BucketType, status: BucketStatus, t: Messages): string {
   if (type === 'gasto') {
-    if (status === 'over')  return 'Estourou';
-    if (status === 'near')  return 'Atenção';
-    return 'OK';
+    if (status === 'over')  return t.bucketsView.over;
+    if (status === 'near')  return t.bucketsView.near;
+    return t.bucketsView.ok;
   }
-  return status === 'reached' ? 'Atingido' : 'Em progresso';
+  return status === 'reached' ? t.bucketsView.reached : t.bucketsView.inProgress;
 }
 
 function statusCls(type: BucketType, status: BucketStatus): string {
   if (type === 'gasto') {
-    if (status === 'over')  return 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400';
-    if (status === 'near')  return 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400';
-    return 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400';
+    if (status === 'over')  return 'bg-destructive/10 text-destructive';
+    if (status === 'near')  return 'bg-warning/10 text-warning';
+    return 'bg-success/10 text-success';
   }
   return status === 'reached'
-    ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400'
-    : 'bg-indigo-100 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-400';
+    ? 'bg-success/10 text-success'
+    : 'bg-primary/10 text-primary';
 }
 
 /**
@@ -197,6 +199,7 @@ function LiquidBucket({
 
 function BucketCard({ bucket, spentCents, categories, incomeCents }: BucketRollup & { incomeCents: number }) {
   const [expanded, setExpanded] = useState(false);
+  const { t } = useLocale();
   const { ratio, targetCents, status } = bucketProgress(
     spentCents, bucket.targetPercent, incomeCents, bucket.type,
   );
@@ -206,7 +209,7 @@ function BucketCard({ bucket, spentCents, categories, incomeCents }: BucketRollu
 
   return (
     <div
-      className="bg-white dark:bg-zinc-900 rounded-xl border border-zinc-200 dark:border-zinc-800 p-4 cursor-pointer select-none transition-shadow hover:shadow-md"
+      className="bg-card rounded-xl border border-border-subtle p-4 cursor-pointer select-none transition-shadow hover:shadow-md"
       onClick={() => setExpanded(e => !e)}
     >
       {/* Name + status badge */}
@@ -215,7 +218,7 @@ function BucketCard({ bucket, spentCents, categories, incomeCents }: BucketRollu
           {bucket.name}
         </span>
         <span className={`text-xs px-1.5 py-0.5 rounded-full ${statusCls(bucket.type, status)}`}>
-          {statusLabel(bucket.type, status)}
+          {statusLabel(bucket.type, status, t)}
         </span>
       </div>
 
@@ -230,7 +233,7 @@ function BucketCard({ bucket, spentCents, categories, incomeCents }: BucketRollu
 
       {/* Spent vs target */}
       <div className="flex items-baseline justify-between mt-2">
-        <span className="text-sm font-semibold tabular-nums text-zinc-800 dark:text-zinc-200">
+        <span className="text-sm font-semibold tabular-nums text-body">
           {formatBRL(spentCents)}
         </span>
         <span className="text-xs text-zinc-400">
@@ -240,17 +243,17 @@ function BucketCard({ bucket, spentCents, categories, incomeCents }: BucketRollu
 
       {/* Category breakdown — revealed on tap/click */}
       {expanded && (
-        <div className="mt-3 pt-3 border-t border-zinc-100 dark:border-zinc-800">
+        <div className="mt-3 pt-3 border-t border-border-divider">
           {categories.length === 0 ? (
-            <p className="text-xs text-zinc-400">Nenhuma categoria atribuída a este balde.</p>
+            <p className="text-xs text-zinc-400">{t.bucketsView.noCategoriesAssigned}</p>
           ) : (
             <div className="space-y-1">
               {categories.map(({ category, cents }) => (
                 <div key={category} className="flex items-center justify-between text-xs">
-                  <span className="text-zinc-500 dark:text-zinc-400 truncate flex-1 mr-2">
+                  <span className="text-muted-foreground truncate flex-1 mr-2">
                     {category}
                   </span>
-                  <span className="tabular-nums text-zinc-600 dark:text-zinc-300 flex-shrink-0">
+                  <span className="tabular-nums text-body flex-shrink-0">
                     {formatBRL(cents)}
                     {targetCents > 0 && (
                       <span className="text-zinc-400 ml-1">
@@ -271,6 +274,7 @@ function BucketCard({ bucket, spentCents, categories, incomeCents }: BucketRollu
 // ── BucketsView ───────────────────────────────────────────────────────────────
 
 export function BucketsView({ rollup, incomeCents, expenseCents }: Props) {
+  const { t } = useLocale();
   const insights             = bucketInsights(rollup.buckets, incomeCents);
   const leftover             = incomeCents - expenseCents;
   const hasCategories        = rollup.buckets.some(b => b.categories.length > 0);
@@ -286,7 +290,7 @@ export function BucketsView({ rollup, incomeCents, expenseCents }: Props) {
     <div>
       {hasCategories && (
         <p className="text-xs text-zinc-400 mb-4 text-center">
-          Toque em um balde para ver as categorias
+          {t.bucketsView.tapHint}
         </p>
       )}
 
@@ -298,17 +302,17 @@ export function BucketsView({ rollup, incomeCents, expenseCents }: Props) {
 
         {/* "Poupança do mês" — derived indicator (the "20%" in 50/30/20) */}
         {incomeCents > 0 && (
-          <div className="bg-white dark:bg-zinc-900 rounded-xl border border-dashed border-zinc-300 dark:border-zinc-700 p-4">
+          <div className="bg-card rounded-xl border border-dashed border-zinc-300 dark:border-zinc-700 p-4">
             <div className="flex items-center justify-between mb-2">
-              <span className="text-sm font-medium text-zinc-500 dark:text-zinc-400">
-                Poupança do mês
+              <span className="text-sm font-medium text-muted-foreground">
+                {t.bucketsView.monthlySavings}
               </span>
               <span className={`text-xs px-1.5 py-0.5 rounded-full ${
                 leftover >= 0
-                  ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400'
-                  : 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400'
+                  ? 'bg-success/10 text-success'
+                  : 'bg-destructive/10 text-destructive'
               }`}>
-                {leftover >= 0 ? 'Positivo' : 'Negativo'}
+                {leftover >= 0 ? t.bucketsView.positive : t.bucketsView.negative}
               </span>
             </div>
             <p className={`text-xl font-semibold tabular-nums mt-4 ${
@@ -318,11 +322,11 @@ export function BucketsView({ rollup, incomeCents, expenseCents }: Props) {
             </p>
             {savingsTargetPercent > 0 ? (
               <p className={`text-xs mt-1 ${savingsShortfall ? 'text-amber-500' : 'text-zinc-400'}`}>
-                Meta {savingsTargetPercent}% → Real {savingsRealPercent}%
+                {t.bucketsView.targetVsReal(savingsTargetPercent, savingsRealPercent)}
                 {savingsShortfall && ` (−${savingsTargetPercent - savingsRealPercent}%)`}
               </p>
             ) : (
-              <p className="text-xs text-zinc-400 mt-1">Receita menos todos os gastos</p>
+              <p className="text-xs text-zinc-400 mt-1">{t.bucketsView.incomeMinusExpenses}</p>
             )}
           </div>
         )}
@@ -330,12 +334,12 @@ export function BucketsView({ rollup, incomeCents, expenseCents }: Props) {
 
       {/* Unassigned spending warning */}
       {rollup.unassigned.spentCents > 0 && (
-        <div className="rounded-xl border border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-900/10 p-4 mb-4">
-          <p className="text-sm font-medium text-amber-800 dark:text-amber-300">
-            Sem balde: {formatBRL(rollup.unassigned.spentCents)}
+        <div className="rounded-xl border border-warning/20 bg-warning/10 p-4 mb-4">
+          <p className="text-sm font-medium text-warning">
+            {t.bucketsView.unassignedSpending(formatBRL(rollup.unassigned.spentCents))}
           </p>
-          <p className="text-xs text-amber-600 dark:text-amber-400 mt-0.5">
-            {rollup.unassigned.categories.map(c => c.category).join(', ')} — classifique em "Configurar baldes".
+          <p className="text-xs text-warning mt-0.5">
+            {t.bucketsView.unassignedHint(rollup.unassigned.categories.map(c => c.category).join(', '))}
           </p>
         </div>
       )}
@@ -348,11 +352,13 @@ export function BucketsView({ rollup, incomeCents, expenseCents }: Props) {
               key={i}
               className={`px-4 py-3 rounded-xl text-sm border ${
                 insight.severity === 'warning'
-                  ? 'bg-amber-50 text-amber-800 border-amber-200 dark:bg-amber-900/20 dark:text-amber-300 dark:border-amber-800'
-                  : 'bg-emerald-50 text-emerald-800 border-emerald-200 dark:bg-emerald-900/20 dark:text-emerald-300 dark:border-emerald-800'
+                  ? 'bg-warning/10 text-warning border-warning/20'
+                  : 'bg-success/10 text-success border-success/20'
               }`}
             >
-              {insight.message}
+              {insight.kind === 'over'
+                ? t.bucketsView.insightOverBudget(insight.bucketName, insight.overByReais)
+                : t.bucketsView.insightGoalReached(insight.bucketName)}
             </div>
           ))}
         </div>

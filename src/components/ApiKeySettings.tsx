@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { getApiKey, setApiKey, clearApiKey } from '@/lib/settings';
+import { useLocale } from '@/i18n/LocaleContext';
 
 interface Props {
   open: boolean;
@@ -17,6 +18,7 @@ interface Props {
 export function ApiKeySettings({ open, onClose, onSaved }: Props) {
   const dialogRef = useRef<HTMLDialogElement>(null);
   const [value, setValue] = useState('');
+  const { t } = useLocale();
 
   useEffect(() => {
     if (open) {
@@ -43,15 +45,13 @@ export function ApiKeySettings({ open, onClose, onSaved }: Props) {
     <dialog
       ref={dialogRef}
       onCancel={onClose}
-      className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 p-6 w-full max-w-md shadow-xl backdrop:bg-black/40"
+      className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 rounded-xl border border-border bg-card p-6 w-full max-w-md shadow-xl backdrop:bg-black/40"
     >
-      <h2 className="text-base font-semibold text-zinc-900 dark:text-zinc-50 mb-1">
-        Chave da API Anthropic
+      <h2 className="text-base font-semibold text-foreground mb-1">
+        {t.apiKeySettings.title}
       </h2>
       <p className="text-xs text-zinc-400 mb-4 leading-relaxed">
-        Para ler fotos e PDFs de faturas, o FinLivre usa o Claude com a <strong>sua</strong> chave.
-        Ela fica salva apenas neste navegador. Importar uma imagem <strong>envia o arquivo para a
-        Anthropic</strong> sob a sua chave — seus dados continuam fora de qualquer servidor nosso.
+        {t.apiKeySettings.description}
       </p>
 
       <input
@@ -64,12 +64,12 @@ export function ApiKeySettings({ open, onClose, onSaved }: Props) {
       />
 
       <p className="text-xs text-zinc-400 mt-2">
-        Crie uma chave em{' '}
+        {t.apiKeySettings.createKeyAt}{' '}
         <a
           href="https://console.anthropic.com/settings/keys"
           target="_blank"
           rel="noopener noreferrer"
-          className="text-indigo-600 dark:text-indigo-400 underline underline-offset-2"
+          className="text-primary underline underline-offset-2"
         >
           console.anthropic.com
         </a>.
@@ -80,21 +80,21 @@ export function ApiKeySettings({ open, onClose, onSaved }: Props) {
           onClick={handleClear}
           className="text-xs text-zinc-400 hover:text-red-500 transition-colors"
         >
-          Remover chave
+          {t.apiKeySettings.removeKey}
         </button>
         <div className="flex gap-2">
           <button
             onClick={onClose}
-            className="rounded-lg border border-zinc-200 dark:border-zinc-700 px-4 py-2 text-sm text-zinc-600 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-800"
+            className="rounded-lg border border-border px-4 py-2 text-sm text-body hover:bg-muted"
           >
-            Cancelar
+            {t.common.cancel}
           </button>
           <button
             onClick={handleSave}
             disabled={!value.trim()}
             className="rounded-lg bg-indigo-600 hover:bg-indigo-700 disabled:opacity-40 text-white text-sm font-medium px-4 py-2 transition-colors"
           >
-            Salvar
+            {t.common.save}
           </button>
         </div>
       </div>
@@ -102,4 +102,4 @@ export function ApiKeySettings({ open, onClose, onSaved }: Props) {
   );
 }
 
-const inputCls = 'rounded-lg border border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800 px-3 py-2 text-sm text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-indigo-500 w-full';
+const inputCls = 'rounded-lg border border-border bg-muted px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-indigo-500 w-full';

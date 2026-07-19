@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
+import { ThemeProvider } from "@/components/ThemeProvider";
 import { Providers } from "@/components/Providers";
 import { AppShell } from "@/components/AppShell";
 import "./globals.css";
@@ -16,7 +17,12 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: "FinLivre",
-  description: "Organize suas finanças. Enfim livre.",
+  description: "Organize your finances. Finally free.",
+  openGraph: {
+    title: "FinLivre",
+    description: "Organize your finances. Finally free.",
+    type: "website",
+  },
 };
 
 export default function RootLayout({
@@ -28,11 +34,14 @@ export default function RootLayout({
     <html
       lang="en"
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
+      suppressHydrationWarning
     >
-      <body className="min-h-full flex flex-col bg-zinc-50 dark:bg-zinc-950">
-        <Providers>
-          <AppShell>{children}</AppShell>
-        </Providers>
+      <body className="min-h-full flex flex-col bg-background">
+        <ThemeProvider>
+          <Providers>
+            <AppShell>{children}</AppShell>
+          </Providers>
+        </ThemeProvider>
       </body>
     </html>
   );

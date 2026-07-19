@@ -183,7 +183,7 @@ backup button, because clearing browser data wipes IndexedDB.
     "Meta X% → Real Y%". (9) Mini-resumo Receita/Gastos/Saldo adicionado no topo do Planejamento.
   - Ver `FIRST_SESSION.md` para o roteiro do sprint de visibilidade (pós-M8) e spec do M9.
 
-- **Milestone 9 — tela de revisão unificada para imports.** ⏳ Especificada em 2026-06-30.
+- **Milestone 9 — tela de revisão unificada para imports.** ✅ Comprometido em `e3e7084` em 2026-07-12.
   Hoje OFX é importado diretamente (sem revisão) enquanto Vision/PDF tem tela de revisão. O objetivo
   é unificar: todo import passa por uma tela de revisão que mostra o mês de destino e permite corrigir
   antes de gravar. Decisões tomadas:
@@ -211,6 +211,37 @@ backup button, because clearing browser data wipes IndexedDB.
       importar sem um mês selecionado. Corrigido em `app/lancamentos/page.tsx`.
     - Mês atual sempre visível no `MonthSelector` mesmo sem entries — `set.add(now)` antes de
       filtrar. Corrigido em `components/MonthSelector.tsx`.
+
+- **Milestone 10 — Theming & i18n.** ✅ 2026-07-19. Duas frentes construídas em paralelo (sessões
+  simultâneas) e reconciliadas ao final.
+  - **Tema claro/escuro/sistema (`next-themes`):** variante `dark` do Tailwind v4 trocada de
+    `@media (prefers-color-scheme)` para classe (`@custom-variant dark (&:where(.dark, .dark *))`),
+    controlada por `next-themes` (`attribute="class"`, script de bloqueio evita flash no load).
+    `ThemeToggle.tsx` — controle segmentado 3 posições (Light/Dark/System) ao lado do
+    `LanguageSwitcher` no header (não fica escondido no `SettingsMenu`).
+  - **Tokens semânticos (`globals.css`):** os 295 pares `dark:` espalhados em 27 arquivos viraram
+    ~14 tokens (`background`, `foreground`, `card`, `border`/`border-subtle`/`border-divider`,
+    `body`, `muted`/`muted-foreground`, `primary`/`primary-muted`, `destructive`, `warning`,
+    `success`) seguindo a convenção shadcn/ui. Cores de status/badge (antes com 4 opacidades
+    diferentes para o mesmo "tint") viraram 1 cor por status + modificador de opacidade do Tailwind
+    (`bg-destructive/10`), o que impede a mesma inconsistência de voltar. Cores de dado
+    (`categoryColor.ts`, `bucketPresets.ts`, `accounts.ts` — cores de banco/categoria) ficaram de
+    fora de propósito: são brand/data colors, iguais nos dois temas.
+  - **Bugs de contraste corrigidos na mesma migração:** 3 pares light/dark invertidos (texto
+    quase ilegível no escuro) e um hover sem variante `dark:` (`RecurringItemsManager.tsx`).
+  - **Charts tema-aware:** Recharts recebe cor via prop JS, não via classe Tailwind — hook
+    `src/hooks/useChartTheme.ts` centraliza tick/tooltip por tema, usado nos 3 charts.
+  - **Bug corrigido:** legenda do `IncomeExpenseChart` (Recharts v3) não respeitava a ordem de
+    declaração dos `<Bar>` e o prop `payload` não é mais aceito pelo tipo do `Legend` na v3 —
+    legenda passou a ser renderizada manualmente (mesmo padrão que o `SpendingChart` já usava).
+  - **Logo:** `Logo.tsx` (marca + wordmark inline SVG, cores literais indigo — não usa os tokens
+    de UI, é brand styling) + `icon.svg`/`opengraph-image.png` via convenção de arquivo do Next.js.
+  - **i18n (EN/PT):** `src/i18n/` — `LocaleContext.tsx` + `messages/{en,pt}.ts`, catálogo de PT
+    tipado contra a interface `Messages` derivada do EN (TypeScript aponta chave faltando).
+    `LanguageSwitcher.tsx` no header. `appName` é constante nos dois idiomas (marca não traduz);
+    `tagline` traduz.
+  - Primeiro teste de componente do repo (`ThemeToggle.test.tsx`, jsdom via docblock por arquivo,
+    sem mudar o ambiente global `node` do `jest.config.js`). 112 testes no total.
 
 ## 10. Parked ideas (v2+ — do not build during M1)
 - **Categorias-mestre (M8 — desejo explícito do João):** um segundo nível de taxonomia acima das

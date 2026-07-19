@@ -1,73 +1,30 @@
-# Start here — sprint de visibilidade (pós M8) + spec M9
+# Start here
 
-M1 → M8 estão completos e estabilizados.
+M1 → M10 estão completos e estabilizados.
 
-## Estado atual (2026-06-30, fim do dia)
+## Estado atual (2026-07-19)
 
-### M8 ✅ completo — bugs incluídos
-- Baldes 50/30/20, SVG animado SMIL, aba Planejamento, BucketSettings, 36 novos testes.
-- **Bugs corrigidos pós-entrega (mesma sessão):**
-  1. `rollupBuckets` não somava recorrentes → corrigido para incluir `getProjectedMonth`
-     no mês corrente/futuro (espelha `SummaryCards`).
-  2. `BucketSettings` mostrava categorias de receita (Salário) → corrigido para filtrar
-     só `direction:'expense'` de entries + recurringItems.
-  3. **`currentMonth()` usava `toISOString()` (UTC)** → retornava mês seguinte após 21h
-     no Brasil (UTC-3). Corrigido para usar hora local (`d.getFullYear()`, `d.getMonth()`).
-     Esse bug único causava: julho sumindo do seletor, recorrentes aparecendo 2 meses
-     atrasados, e renda do Planejamento calculada errada.
-  4. "Sobra do mês" → "Poupança do mês" com "Meta X% → Real Y%".
-  5. Mini-resumo Receita/Gastos/Saldo adicionado no topo do Planejamento.
-  6. `AppShell` oculta `AccountFilter` na rota `/planejamento`.
-  7. `planejamento/page.tsx` usa `accountId:'all'` (ignora filtro de conta por design).
+### M9 ✅ completo — tela de revisão unificada para imports
+Comprometido `e3e7084` em 2026-07-12. OFX passou a usar a mesma `ImportReviewTable` que o
+Vision já usava, com coluna de mês (`billingMonth`) editável antes de confirmar.
 
-### Testes: 103 passando
+### M10 ✅ completo — Theming & i18n
+- Tema claro/escuro/sistema (`next-themes`), ~14 tokens semânticos em `globals.css`
+  substituindo os `dark:` espalhados, charts tema-aware (`useChartTheme.ts`), logo
+  (`Logo.tsx` + `icon.svg`/`opengraph-image.png`).
+- Idioma EN/PT (`src/i18n/`), `LanguageSwitcher` no header.
+- Ver `PLAN.md §9 Milestone 10` para detalhes completos e decisões.
+
+### Testes: 112 passando
 
 ---
 
-## O que vem agora (em ordem)
+## O que vem agora
 
-### 1. Sprint de visibilidade — NÃO é feature
-
-**Não adicionar mais features antes disso.** O padrão do João é escopo crescente → projeto
-inacabado. O README e o LinkedIn são o que transforma o trabalho técnico em portfólio visível.
-
-**README (prioridade máxima):**
-- Live URL (Vercel) no topo.
-- Screenshots: Dashboard, Lançamentos (import OFX + Vision), Planejamento (baldes animados).
-- Seção em inglês — público-alvo = recrutadores internacionais.
-- Decisões técnicas para recrutadores:
-  - Local-first (IndexedDB/Dexie v4, schema migrations v1→v4), zero backend.
-  - OFX parser determinístico + Claude Vision BYO-key, browser-direct.
-  - SVG animado via SMIL (`<animateTransform>`) — CSS transforms em SVG usam pixels CSS,
-    não unidades SVG. SMIL opera no sistema de coordenadas SVG diretamente.
-  - Arquitetura "tudo é Entry" — fontes (OFX/Vision/manual/recorrente) são apenas importers;
-    o ledger é a única fonte de verdade.
-  - `matchesFilters` e `effectiveMonth` como predicados únicos que todos reutilizam.
-
-**LinkedIn:** post curto em inglês, link Vercel, stack, narrativa "built it to use it".
-
-**GitHub:** repositório público, description + topics, pinned no perfil.
-
-### 2. M9 — tela de revisão unificada para imports
-
-**Spec completa em `PLAN.md §9 Milestone 9`.** Resumo executivo:
-
-**Problema:** OFX é importado diretamente (sem revisão). Vision/PDF tem tela de revisão.
-O usuário não consegue ver nem corrigir erros de `billingMonth` antes do commit no OFX.
-
-**Solução:** extrair `ImportReviewTable` como componente compartilhado de `VisionImportButton.tsx`.
-OFX passa a fazer: `parse → tela de revisão → confirmar → commitParsedEntries`.
-
-**Coluna "Mês":** a tabela de revisão exibe `effectiveMonth(entry)` com `<select>` para
-corrigir o `billingMonth` de cada entry (ou de todas de uma vez) antes de confirmar.
-
-**Arquivos a tocar:**
-- `components/VisionImportButton.tsx` — extrai tabela para componente separado
-- `components/ImportReviewTable.tsx` — novo componente compartilhado
-- `components/UploadButton.tsx` — plugar a tabela de revisão
-- `lib/importers/ofx.ts` — verificar que `billingMonth` está sendo preenchido
-
-**Não muda:** `commitParsedEntries` e dedupe por hash — são o núcleo estável.
+Nenhuma milestone nova está especificada ainda. Candidatos em `PLAN.md §10` (parked ideas):
+Split/Cobranças (empréstimos e divisões), "Todos" multi-dashboard, PDF importers per bank,
+Open Finance integration (v2 flagship). Escolher a próxima com o João antes de começar —
+não iniciar uma feature nova sem antes atualizar este arquivo com a spec.
 
 ---
 
@@ -80,6 +37,10 @@ corrigir o `billingMonth` de cada entry (ou de todas de uma vez) antes de confir
 - Planejamento ignora filtro de conta (visão global por design).
 - Money em `amountCents` (integer), nunca float.
 - `'use client'` em qualquer componente que toca Dexie.
+- Tema via `next-themes` + classe `.dark` no `<html>` (não `prefers-color-scheme` puro).
+  Cores de UI passam pelos tokens semânticos de `globals.css`; cores de dado
+  (`categoryColor.ts`, `bucketPresets.ts`, `accounts.ts`) ficam de fora — são brand/data colors.
+- i18n via `src/i18n/LocaleContext.tsx`; `pt.ts` é tipado contra a interface `Messages` do `en.ts`.
 
 ## Lembretes técnicos
 
@@ -87,4 +48,4 @@ corrigir o `billingMonth` de cada entry (ou de todas de uma vez) antes de confir
 - `<dialog>` precisa de `fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2`.
 - SMIL `<animateTransform>` em vez de CSS transform para animação SVG.
 - SVG clipPath/animações: uid único por instância (`uid = String(bucket.id ?? bucket.name)`).
-- `npm test` antes de qualquer commit. 103 testes devem passar.
+- `npm test` antes de qualquer commit. 112 testes devem passar.

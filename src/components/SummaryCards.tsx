@@ -7,10 +7,12 @@ import { matchesFilters } from '@/lib/filters';
 import { useMonth } from '@/context/MonthContext';
 import { useAccountFilter } from '@/context/AccountFilterContext';
 import { getProjectedMonth } from '@/lib/projection';
+import { useLocale } from '@/i18n/LocaleContext';
 
 export function SummaryCards() {
   const { selectedMonth } = useMonth();
   const { selectedAccountId } = useAccountFilter();
+  const { t } = useLocale();
   const now = currentMonth();
   const isFuture = !!selectedMonth && selectedMonth > now;
   // Current month also gets projection so recurring items set from this month are visible.
@@ -48,15 +50,15 @@ export function SummaryCards() {
   return (
     <div className="mb-6">
       {isFuture && (
-        <p className="text-xs text-indigo-400 dark:text-indigo-500 text-center mb-2">
-          Projeção — parcelas comprometidas + receitas/despesas recorrentes
+        <p className="text-xs text-primary-muted text-center mb-2">
+          {t.summaryCards.projectionNote}
         </p>
       )}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <Card label="Receitas" value={formatBRL(displayIncome)} color="text-emerald-600" />
-        <Card label="Gastos"   value={formatBRL(displayExpense)} color="text-red-500" />
+        <Card label={t.totals.income} value={formatBRL(displayIncome)} color="text-emerald-600" />
+        <Card label={t.totals.expenses} value={formatBRL(displayExpense)} color="text-red-500" />
         <Card
-          label="Saldo"
+          label={t.totals.balance}
           value={formatBRL(Math.abs(net))}
           prefix={net >= 0 ? '+' : '-'}
           color={net >= 0 ? 'text-emerald-600' : 'text-red-500'}
@@ -70,8 +72,8 @@ function Card({ label, value, color, prefix = '' }: {
   label: string; value: string; color: string; prefix?: string;
 }) {
   return (
-    <div className="bg-white dark:bg-zinc-900 rounded-xl border border-zinc-200 dark:border-zinc-800 p-5">
-      <p className="text-xs font-medium text-zinc-500 dark:text-zinc-400 mb-1">{label}</p>
+    <div className="bg-card rounded-xl border border-border-subtle p-5">
+      <p className="text-xs font-medium text-muted-foreground mb-1">{label}</p>
       <p className={`text-2xl font-semibold tabular-nums ${color}`}>{prefix}{value}</p>
     </div>
   );

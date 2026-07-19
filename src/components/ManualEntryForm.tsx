@@ -4,6 +4,7 @@ import { useRef, useState } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '@/lib/db';
 import { addManualEntry } from '@/lib/import-pipeline';
+import { useLocale } from '@/i18n/LocaleContext';
 
 function today() {
   return new Date().toISOString().slice(0, 10);
@@ -29,6 +30,7 @@ export function ManualEntryForm() {
   const dialogRef = useRef<HTMLDialogElement>(null);
   const [fields, setFields] = useState(EMPTY);
   const [error, setError] = useState('');
+  const { t } = useLocale();
 
   const categories = useLiveQuery(() =>
     db.entries.orderBy('category').uniqueKeys() as Promise<string[]>
@@ -51,9 +53,9 @@ export function ManualEntryForm() {
     const amountCents = Math.round(parseFloat(fields.amount.replace(',', '.')) * 100);
     const n = Math.max(1, parseInt(fields.installments, 10) || 1);
 
-    if (!fields.description.trim()) return setError('Descrição obrigatória.');
-    if (isNaN(amountCents) || amountCents <= 0) return setError('Valor inválido.');
-    if (!fields.category.trim()) return setError('Categoria obrigatória.');
+    if (!fields.description.trim()) return setError(t.manualEntryForm.descriptionRequired);
+    if (isNaN(amountCents) || amountCents <= 0) return setError(t.manualEntryForm.invalidAmount);
+    if (!fields.category.trim()) return setError(t.manualEntryForm.categoryRequired);
 
     const desc = fields.description.trim();
     const accountId = fields.accountId !== '' ? Number(fields.accountId) : undefined;
@@ -94,21 +96,21 @@ export function ManualEntryForm() {
         onClick={open}
         className="rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium px-4 py-2 transition-colors"
       >
-        + Adicionar
+        {t.manualEntryForm.addButton}
       </button>
 
       {/* HTML native modal — no library needed */}
       <dialog
         ref={dialogRef}
-        className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 p-6 w-full max-w-md shadow-xl backdrop:bg-black/40"
+        className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 rounded-xl border border-border bg-card p-6 w-full max-w-md shadow-xl backdrop:bg-black/40"
       >
-        <h2 className="text-base font-semibold text-zinc-900 dark:text-zinc-50 mb-5">Nova entrada</h2>
+        <h2 className="text-base font-semibold text-foreground mb-5">{t.manualEntryForm.title}</h2>
 
         <form onSubmit={handleSubmit} className="flex flex-col gap-4">
 
           <div className="grid grid-cols-2 gap-3">
             <label className="flex flex-col gap-1">
-              <span className="text-xs text-zinc-500">Data</span>
+              <span className="text-xs text-zinc-500">{t.common.date}</span>
               <input
                 type="date"
                 value={fields.date}
@@ -118,23 +120,23 @@ export function ManualEntryForm() {
             </label>
 
             <label className="flex flex-col gap-1">
-              <span className="text-xs text-zinc-500">Tipo</span>
+              <span className="text-xs text-zinc-500">{t.common.type}</span>
               <select
                 value={fields.direction}
                 onChange={e => set('direction', e.target.value as 'income' | 'expense')}
                 className={inputCls}
               >
-                <option value="expense">Despesa</option>
-                <option value="income">Receita</option>
+                <option value="expense">{t.common.expense}</option>
+                <option value="income">{t.common.income}</option>
               </select>
             </label>
           </div>
 
           <label className="flex flex-col gap-1">
-            <span className="text-xs text-zinc-500">Descrição</span>
+            <span className="text-xs text-zinc-500">{t.common.description}</span>
             <input
               type="text"
-              placeholder="Ex: Aluguel, Salário…"
+              placeholder={t.manualEntryForm.descriptionPlaceholder}
               value={fields.description}
               onChange={e => set('description', e.target.value)}
               className={inputCls}
@@ -143,7 +145,7 @@ export function ManualEntryForm() {
 
           <div className="grid grid-cols-2 gap-3">
             <label className="flex flex-col gap-1">
-              <span className="text-xs text-zinc-500">Valor (R$)</span>
+              <span className="text-xs text-zinc-500">{t.common.amount}</span>
               <input
                 type="text"
                 inputMode="decimal"
@@ -155,12 +157,12 @@ export function ManualEntryForm() {
             </label>
 
             <label className="flex flex-col gap-1">
-              <span className="text-xs text-zinc-500">Categoria</span>
-              {/* datalist = autocomplete das existentes + permite digitar nova */}
+              <span className="text-xs text-zinc-500">{t.common.category}</span>
+              {/* datalist = autocomplete over existing categories, still allows typing a new one */}
               <input
                 type="text"
                 list="category-list"
-                placeholder="Alimentação…"
+                placeholder={t.manualEntryForm.categoryPlaceholder}
                 value={fields.category}
                 onChange={e => set('category', e.target.value)}
                 className={inputCls}
@@ -176,10 +178,13 @@ export function ManualEntryForm() {
           {fields.direction === 'expense' && (
             <div className="flex flex-col gap-1">
               <label className="flex items-center justify-between">
-                <span className="text-xs text-zinc-500">Parcelas</span>
+                <span className="text-xs text-zinc-500">{t.manualEntryForm.installments}</span>
                 {parseInt(fields.installments) > 1 && !isNaN(parseFloat(fields.amount.replace(',', '.'))) && (
                   <span className="text-xs text-zinc-400">
-                    {fields.installments}x de R$ {(Math.floor(Math.round(parseFloat(fields.amount.replace(',', '.')) * 100) / parseInt(fields.installments)) / 100).toFixed(2)}
+                    {t.manualEntryForm.installmentsSummary(
+                      parseInt(fields.installments),
+                      (Math.floor(Math.round(parseFloat(fields.amount.replace(',', '.')) * 100) / parseInt(fields.installments)) / 100).toFixed(2),
+                    )}
                   </span>
                 )}
               </label>
@@ -196,13 +201,13 @@ export function ManualEntryForm() {
 
           {accounts.length > 0 && (
             <label className="flex flex-col gap-1">
-              <span className="text-xs text-zinc-500">Conta</span>
+              <span className="text-xs text-zinc-500">{t.common.account}</span>
               <select
                 value={String(fields.accountId)}
                 onChange={e => set('accountId', e.target.value)}
                 className={inputCls}
               >
-                <option value="">Sem conta</option>
+                <option value="">{t.common.noAccount}</option>
                 {accounts.map(acc => (
                   <option key={acc.id} value={acc.id}>{acc.name}</option>
                 ))}
@@ -216,15 +221,15 @@ export function ManualEntryForm() {
             <button
               type="button"
               onClick={() => dialogRef.current?.close()}
-              className="rounded-lg border border-zinc-200 dark:border-zinc-700 px-4 py-2 text-sm text-zinc-600 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-800"
+              className="rounded-lg border border-border px-4 py-2 text-sm text-body hover:bg-muted"
             >
-              Cancelar
+              {t.common.cancel}
             </button>
             <button
               type="submit"
               className="rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium px-4 py-2 transition-colors"
             >
-              Salvar
+              {t.common.save}
             </button>
           </div>
         </form>
@@ -233,4 +238,4 @@ export function ManualEntryForm() {
   );
 }
 
-const inputCls = 'rounded-lg border border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800 px-3 py-2 text-sm text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-indigo-500 w-full';
+const inputCls = 'rounded-lg border border-border bg-muted px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-indigo-500 w-full';

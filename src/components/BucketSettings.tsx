@@ -5,9 +5,11 @@ import { useLiveQuery } from 'dexie-react-hooks';
 import { db, type Bucket, type BucketType } from '@/lib/db';
 import { BUCKET_PRESETS } from '@/lib/bucketPresets';
 import { applyPreset } from '@/lib/buckets';
+import { useLocale } from '@/i18n/LocaleContext';
 
 export function BucketSettings() {
   const dialogRef = useRef<HTMLDialogElement>(null);
+  const { t } = useLocale();
 
   const dbBuckets = useLiveQuery(
     () => db.buckets.orderBy('order').toArray(),
@@ -81,19 +83,19 @@ export function BucketSettings() {
       <button
         type="button"
         onClick={open}
-        className="text-sm px-3 py-1.5 rounded-lg border border-zinc-200 dark:border-zinc-700 text-zinc-600 dark:text-zinc-300 hover:border-indigo-400 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors"
+        className="text-sm px-3 py-1.5 rounded-lg border border-border text-body hover:border-indigo-400 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors"
       >
-        Configurar baldes
+        {t.bucketSettings.button}
       </button>
 
       <dialog
         ref={dialogRef}
-        className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 p-6 w-full max-w-xl shadow-xl backdrop:bg-black/40 max-h-[90vh] overflow-y-auto"
+        className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 rounded-xl border border-border bg-card p-6 w-full max-w-xl shadow-xl backdrop:bg-black/40 max-h-[90vh] overflow-y-auto"
       >
         {/* Header */}
         <div className="flex items-center justify-between mb-5">
-          <h2 className="text-base font-semibold text-zinc-900 dark:text-zinc-50">
-            Baldes de planejamento
+          <h2 className="text-base font-semibold text-foreground">
+            {t.bucketSettings.title}
           </h2>
           <button
             type="button"
@@ -106,14 +108,14 @@ export function BucketSettings() {
 
         {/* Preset selector */}
         <div className="mb-5">
-          <p className="text-xs text-zinc-500 mb-2">Aplicar preset</p>
+          <p className="text-xs text-zinc-500 mb-2">{t.bucketSettings.applyPreset}</p>
           <div className="flex gap-2 flex-wrap">
             {BUCKET_PRESETS.map(p => (
               <button
                 key={p.name}
                 type="button"
                 onClick={() => handleApplyPreset(p.name)}
-                className="text-xs px-3 py-1.5 rounded-lg border border-zinc-200 dark:border-zinc-700 text-zinc-600 dark:text-zinc-300 hover:border-indigo-400 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors"
+                className="text-xs px-3 py-1.5 rounded-lg border border-border text-body hover:border-indigo-400 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors"
               >
                 {p.name}
               </button>
@@ -124,15 +126,15 @@ export function BucketSettings() {
         {/* Bucket editor */}
         {localBuckets.length === 0 ? (
           <p className="text-sm text-zinc-400 mb-4">
-            Aplique um preset acima para começar.
+            {t.bucketSettings.emptyState}
           </p>
         ) : (
           <>
             <div className="flex flex-col gap-2 mb-3">
               <div className="grid grid-cols-[28px_1fr_96px_72px] gap-2 text-xs text-zinc-400 px-1">
                 <span />
-                <span>Nome</span>
-                <span>Tipo</span>
+                <span>{t.common.name}</span>
+                <span>{t.common.type}</span>
                 <span className="text-right">%</span>
               </div>
               {localBuckets.map((b, i) => (
@@ -158,8 +160,8 @@ export function BucketSettings() {
                     onChange={e => updateBucket(i, { type: e.target.value as BucketType })}
                     className={inputCls}
                   >
-                    <option value="gasto">Gasto</option>
-                    <option value="meta">Meta</option>
+                    <option value="gasto">{t.bucketType.gasto}</option>
+                    <option value="meta">{t.bucketType.meta}</option>
                   </select>
                   <input
                     type="number"
@@ -178,7 +180,7 @@ export function BucketSettings() {
             {/* Sum warning + save */}
             <div className="flex items-center gap-3 mb-5 flex-wrap">
               <span className="text-xs text-zinc-500">
-                Soma:{' '}
+                {t.bucketSettings.total}{' '}
                 <strong
                   className={
                     totalPercent === 100
@@ -192,8 +194,8 @@ export function BucketSettings() {
               {totalPercent !== 100 && (
                 <span className="text-xs text-amber-600">
                   {totalPercent < 100
-                    ? `Os ${100 - totalPercent}% restantes = "Sobra do mês"`
-                    : 'Aviso: soma ultrapassa 100%'}
+                    ? t.bucketSettings.remainderNote(100 - totalPercent)
+                    : t.bucketSettings.sumWarning}
                 </span>
               )}
               <button
@@ -201,7 +203,7 @@ export function BucketSettings() {
                 onClick={saveBuckets}
                 className="ml-auto text-xs px-3 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white font-medium transition-colors"
               >
-                Salvar baldes
+                {t.bucketSettings.saveBuckets}
               </button>
             </div>
           </>
@@ -209,14 +211,14 @@ export function BucketSettings() {
 
         {/* Category assignment */}
         {localBuckets.length > 0 && categories.length > 0 && (
-          <div className="border-t border-zinc-100 dark:border-zinc-800 pt-4">
+          <div className="border-t border-border-divider pt-4">
             <div className="flex items-center justify-between mb-3">
-              <h3 className="text-sm font-medium text-zinc-700 dark:text-zinc-300">
-                Atribuir categorias
+              <h3 className="text-sm font-medium text-body">
+                {t.bucketSettings.assignCategories}
               </h3>
               {unassignedCount > 0 && (
-                <span className="text-xs font-medium bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400 px-2 py-0.5 rounded-full">
-                  {unassignedCount} sem balde
+                <span className="text-xs font-medium bg-warning/10 text-warning px-2 py-0.5 rounded-full">
+                  {t.bucketSettings.unassignedCount(unassignedCount)}
                 </span>
               )}
             </div>
@@ -229,11 +231,11 @@ export function BucketSettings() {
                     key={cat}
                     className={`flex items-center gap-3 px-2 py-1 rounded-lg ${
                       isUnassigned
-                        ? 'bg-amber-50 dark:bg-amber-900/10'
+                        ? 'bg-warning/10'
                         : ''
                     }`}
                   >
-                    <span className="text-sm text-zinc-700 dark:text-zinc-300 flex-1 truncate">
+                    <span className="text-sm text-body flex-1 truncate">
                       {cat}
                     </span>
                     <select
@@ -241,7 +243,7 @@ export function BucketSettings() {
                       onChange={e => handleCategoryAssign(cat, e.target.value)}
                       className={selectSmCls}
                     >
-                      <option value="">— sem balde —</option>
+                      <option value="">{t.bucketSettings.noBucket}</option>
                       {dbBuckets.map(b => (
                         <option key={b.id} value={b.id!.toString()}>
                           {b.name}
@@ -260,8 +262,8 @@ export function BucketSettings() {
 }
 
 const inputCls =
-  'rounded-lg border border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800 px-3 py-2 text-sm text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-indigo-500 w-full';
+  'rounded-lg border border-border bg-muted px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-indigo-500 w-full';
 
 // Used for the per-category select — fixed width so the category name span has room.
 const selectSmCls =
-  'rounded-lg border border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800 px-2 py-1.5 text-sm text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-indigo-500 w-44 flex-shrink-0';
+  'rounded-lg border border-border bg-muted px-2 py-1.5 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-indigo-500 w-44 flex-shrink-0';

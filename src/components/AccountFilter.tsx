@@ -4,6 +4,7 @@ import { useLiveQuery } from 'dexie-react-hooks';
 import { db, type Account } from '@/lib/db';
 import { useMonth } from '@/context/MonthContext';
 import { useAccountFilter } from '@/context/AccountFilterContext';
+import { useLocale } from '@/i18n/LocaleContext';
 
 /**
  * Global account filter row — the account-scoped sibling of MonthSelector.
@@ -17,6 +18,7 @@ export function AccountFilter() {
   const { selectedMonth } = useMonth();
   const { selectedAccountId, setSelectedAccountId } = useAccountFilter();
   const accounts = useLiveQuery(() => db.accounts.toArray(), [], [] as Account[]);
+  const { t } = useLocale();
 
   // No accounts yet, or all-time view → nothing meaningful to filter by here.
   if (accounts.length === 0 || !selectedMonth) return null;
@@ -24,7 +26,7 @@ export function AccountFilter() {
   return (
     <div className="flex items-center gap-1 mb-6 overflow-x-auto pb-1">
       <Pill
-        label="Todas as contas"
+        label={t.accountFilter.allAccounts}
         active={selectedAccountId === 'all'}
         onClick={() => setSelectedAccountId('all')}
       />
@@ -38,7 +40,7 @@ export function AccountFilter() {
         />
       ))}
       <Pill
-        label="Manual"
+        label={t.accountFilter.manual}
         active={selectedAccountId === 'manual'}
         onClick={() => setSelectedAccountId('manual')}
       />
@@ -60,7 +62,7 @@ function Pill({
       className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium whitespace-nowrap transition-colors ${
         active
           ? 'bg-indigo-600 text-white'
-          : 'bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 text-zinc-600 dark:text-zinc-300 hover:border-indigo-400 hover:text-indigo-600'
+          : 'bg-card border border-border text-body hover:border-indigo-400 hover:text-indigo-600'
       }`}
     >
       {color && <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: color }} />}

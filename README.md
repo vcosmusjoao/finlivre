@@ -24,6 +24,8 @@ So I built my own. FinLivre imports my real statements, categorizes everything, 
 
 **Your data is yours.** Everything is stored in IndexedDB in your browser. There is no backend, no account, no tracking. Export everything to JSON or CSV whenever you want.
 
+**Light, dark, or system — and English or Portuguese.** A theme toggle in the header switches instantly with no flash on load, persisted across sessions. The whole UI is available in English and Portuguese via a language switcher next to it.
+
 ## Screenshots
 
 | Dashboard | Lançamentos |
@@ -56,6 +58,8 @@ So I built my own. FinLivre imports my real statements, categorizes everything, 
 - Dexie (IndexedDB) for local-first storage
 - Recharts for data visualization
 - Anthropic SDK (Claude Vision, BYO key) for the optional AI import
+- next-themes for the light/dark/system toggle
+- A small custom i18n layer for English/Portuguese
 
 ## Getting started
 
@@ -76,4 +80,5 @@ Open http://localhost:3000.
 6. Account filters, stable category colors, recurring overrides ✅
 7. App Router navigation (Dashboard / Lançamentos / Planejamento) ✅
 8. Budget buckets (50/30/20 style planning view) ✅
-9. Unified import review screen, so OFX gets the same editable review table Vision already has (next)
+9. Unified import review screen, so OFX gets the same editable review table Vision already has ✅
+10. Dark mode, theme toggle, and English/Portuguese language support ✅

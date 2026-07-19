@@ -4,20 +4,22 @@ import { SpendingChart } from '@/components/SpendingChart';
 import { SpendingByAccountChart } from '@/components/SpendingByAccountChart';
 import { IncomeExpenseChart } from '@/components/IncomeExpenseChart';
 import { TransactionsTable } from '@/components/TransactionsTable';
+import { useLocale } from '@/i18n/LocaleContext';
 
 export function AllTimeDashboard() {
+  const { t } = useLocale();
   return (
     <>
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-        <div className="bg-white dark:bg-zinc-900 rounded-xl border border-zinc-200 dark:border-zinc-800 p-6 flex flex-col items-center">
-          <h2 className="text-sm font-medium text-zinc-500 dark:text-zinc-400 mb-4 self-start">
-            Gastos por categoria
+        <div className="bg-card rounded-xl border border-border-subtle p-6 flex flex-col items-center">
+          <h2 className="text-sm font-medium text-muted-foreground mb-4 self-start">
+            {t.dashboardPage.spendingByCategory}
           </h2>
           <SpendingChart />
         </div>
-        <div className="bg-white dark:bg-zinc-900 rounded-xl border border-zinc-200 dark:border-zinc-800 p-6">
-          <h2 className="text-sm font-medium text-zinc-500 dark:text-zinc-400 mb-4">
-            Gastos por conta
+        <div className="bg-card rounded-xl border border-border-subtle p-6">
+          <h2 className="text-sm font-medium text-muted-foreground mb-4">
+            {t.dashboardPage.spendingByAccount}
           </h2>
           <SpendingByAccountChart />
         </div>
@@ -25,7 +27,7 @@ export function AllTimeDashboard() {
 
       <IncomeExpenseChart />
 
-      <div className="bg-white dark:bg-zinc-900 rounded-xl border border-zinc-200 dark:border-zinc-800 p-6 mt-6">
+      <div className="bg-card rounded-xl border border-border-subtle p-6 mt-6">
         <TransactionsTable />
       </div>
     </>

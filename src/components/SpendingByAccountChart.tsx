@@ -4,8 +4,12 @@ import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '@/lib/db';
 import { formatBRL } from '@/lib/format';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, Cell, ResponsiveContainer } from 'recharts';
+import { useLocale } from '@/i18n/LocaleContext';
+import { useChartTheme } from '@/hooks/useChartTheme';
 
 export function SpendingByAccountChart() {
+  const { t } = useLocale();
+  const chartTheme = useChartTheme();
   const entries = useLiveQuery(
     () => db.entries.where('direction').equals('expense').toArray(),
     []
@@ -21,7 +25,7 @@ export function SpendingByAccountChart() {
     const key = e.accountId !== undefined ? String(e.accountId) : '__none__';
     if (!totals[key]) {
       const acc = e.accountId !== undefined ? accountMap.get(e.accountId) : undefined;
-      totals[key] = { name: acc?.name ?? 'Sem conta', color: acc?.color ?? '#94a3b8', total: 0 };
+      totals[key] = { name: acc?.name ?? t.common.noAccount, color: acc?.color ?? '#94a3b8', total: 0 };
     }
     totals[key].total += e.amountCents;
   }
@@ -36,10 +40,10 @@ export function SpendingByAccountChart() {
           <XAxis
             type="number"
             tickFormatter={v => `R$${(v / 100).toFixed(0)}`}
-            tick={{ fontSize: 11 }}
+            tick={{ fontSize: 11, ...chartTheme.tick }}
           />
-          <YAxis type="category" dataKey="name" width={80} tick={{ fontSize: 12 }} />
-          <Tooltip formatter={(value) => formatBRL(value as number)} />
+          <YAxis type="category" dataKey="name" width={80} tick={{ fontSize: 12, ...chartTheme.tick }} />
+          <Tooltip formatter={(value) => formatBRL(value as number)} {...chartTheme.tooltip} />
           <Bar dataKey="total" radius={[0, 4, 4, 0]}>
             {data.map((item, i) => (
               <Cell key={i} fill={item.color} />

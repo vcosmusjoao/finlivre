@@ -6,10 +6,14 @@ import { useAccountFilter } from '@/context/AccountFilterContext';
 import { matchesFilters } from '@/lib/filters';
 import { colorForCategory, OUTROS_COLOR } from '@/lib/categoryColor';
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from 'recharts';
+import { useLocale } from '@/i18n/LocaleContext';
+import { useChartTheme } from '@/hooks/useChartTheme';
 
 export function SpendingChart() {
   const { selectedMonth } = useMonth();
   const { selectedAccountId } = useAccountFilter();
+  const { t } = useLocale();
+  const chartTheme = useChartTheme();
 
   const entries = useLiveQuery(() =>
     db.entries.where('direction').equals('expense')
@@ -33,7 +37,7 @@ export function SpendingChart() {
   const rest = sorted.slice(MAX_SLICES);
   const outrosTotal = rest.reduce((sum, item) => sum + item.total, 0);
 
-  const data = outrosTotal > 0 ? [...top, { category: 'Outros', total: outrosTotal }] : top;
+  const data = outrosTotal > 0 ? [...top, { category: t.spendingChart.others, total: outrosTotal }] : top;
 
    return (
   <div className="w-full">
@@ -43,11 +47,11 @@ export function SpendingChart() {
           {data.map((item) => (
             <Cell
               key={item.category}
-              fill={item.category === 'Outros' ? OUTROS_COLOR : colorForCategory(item.category)}
+              fill={item.category === t.spendingChart.others ? OUTROS_COLOR : colorForCategory(item.category)}
             />
           ))}
         </Pie>
-        <Tooltip formatter={(value) => `R$ ${((value as number) / 100).toFixed(2)}`} />
+        <Tooltip formatter={(value) => `R$ ${((value as number) / 100).toFixed(2)}`} {...chartTheme.tooltip} />
       </PieChart>
     </ResponsiveContainer>
     <div className="flex flex-wrap gap-x-4 gap-y-1.5 justify-center mt-3">
@@ -55,9 +59,9 @@ export function SpendingChart() {
         <div key={item.category} className="flex items-center gap-1.5">
           <span
             className="w-2.5 h-2.5 rounded-full flex-shrink-0"
-            style={{ background: item.category === 'Outros' ? OUTROS_COLOR : colorForCategory(item.category) }}
+            style={{ background: item.category === t.spendingChart.others ? OUTROS_COLOR : colorForCategory(item.category) }}
           />
-          <span className="text-xs text-zinc-600 dark:text-zinc-400">{item.category}</span>
+          <span className="text-xs text-muted-foreground">{item.category}</span>
         </div>
       ))}
     </div>

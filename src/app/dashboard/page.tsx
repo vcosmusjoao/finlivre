@@ -10,9 +10,11 @@ import { IncomeExpenseChart } from '@/components/IncomeExpenseChart';
 import { TransactionsTable } from '@/components/TransactionsTable';
 import { ProjectedView } from '@/components/ProjectedView';
 import Link from 'next/link';
+import { useLocale } from '@/i18n/LocaleContext';
 
 export default function DashboardPage() {
   const { selectedMonth } = useMonth();
+  const { t } = useLocale();
   const now = currentMonth();
   const isFuture = !!selectedMonth && selectedMonth > now;
   const isCurrentMonth = !!selectedMonth && selectedMonth === now;
@@ -24,12 +26,12 @@ export default function DashboardPage() {
         <SummaryCards />
         <InvoiceCards />
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-          <div className="bg-white dark:bg-zinc-900 rounded-xl border border-zinc-200 dark:border-zinc-800 p-6 flex flex-col items-center">
-            <h2 className="text-sm font-medium text-zinc-500 dark:text-zinc-400 mb-4 self-start">Gastos por categoria</h2>
+          <div className="bg-card rounded-xl border border-border-subtle p-6 flex flex-col items-center">
+            <h2 className="text-sm font-medium text-muted-foreground mb-4 self-start">{t.dashboardPage.spendingByCategory}</h2>
             <SpendingChart />
           </div>
-          <div className="bg-white dark:bg-zinc-900 rounded-xl border border-zinc-200 dark:border-zinc-800 p-6">
-            <h2 className="text-sm font-medium text-zinc-500 dark:text-zinc-400 mb-4">Gastos por conta</h2>
+          <div className="bg-card rounded-xl border border-border-subtle p-6">
+            <h2 className="text-sm font-medium text-muted-foreground mb-4">{t.dashboardPage.spendingByAccount}</h2>
             <SpendingByAccountChart />
           </div>
         </div>
@@ -43,13 +45,13 @@ export default function DashboardPage() {
     return (
       <>
         <SummaryCards />
-        <div className="rounded-xl border border-dashed border-zinc-200 dark:border-zinc-800 p-8 text-center">
-          <p className="text-sm text-zinc-500 dark:text-zinc-400">
-            Mês futuro — sem dados reais ainda.
+        <div className="rounded-xl border border-dashed border-border-subtle p-8 text-center">
+          <p className="text-sm text-muted-foreground">
+            {t.dashboardPage.futureMonthNotice}
           </p>
-          <p className="text-xs text-zinc-400 dark:text-zinc-600 mt-1">
-            Veja os compromissos previstos em{' '}
-            <Link href="/lancamentos" className="text-indigo-500 hover:underline">Lançamentos</Link>.
+          <p className="text-xs text-muted-foreground mt-1">
+            {t.dashboardPage.seeCommitmentsIn}{' '}
+            <Link href="/lancamentos" className="text-indigo-500 hover:underline">{t.nav.transactions}</Link>.
           </p>
         </div>
       </>
@@ -62,18 +64,18 @@ export default function DashboardPage() {
       <SummaryCards />
       <InvoiceCards />
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
-        <div className="bg-white dark:bg-zinc-900 rounded-xl border border-zinc-200 dark:border-zinc-800 p-6 flex flex-col items-center">
-          <h2 className="text-sm font-medium text-zinc-500 dark:text-zinc-400 mb-4 self-start">Gastos por categoria</h2>
+        <div className="bg-card rounded-xl border border-border-subtle p-6 flex flex-col items-center">
+          <h2 className="text-sm font-medium text-muted-foreground mb-4 self-start">{t.dashboardPage.spendingByCategory}</h2>
           <SpendingChart />
         </div>
-        <div className="lg:col-span-2 bg-white dark:bg-zinc-900 rounded-xl border border-zinc-200 dark:border-zinc-800 p-6">
+        <div className="lg:col-span-2 bg-card rounded-xl border border-border-subtle p-6">
           <TransactionsTable />
         </div>
       </div>
 
       {isCurrentMonth && (
-        <div className="bg-white dark:bg-zinc-900 rounded-xl border border-zinc-200 dark:border-zinc-800 p-6 mb-6">
-          <h2 className="text-sm font-medium text-zinc-500 dark:text-zinc-400 mb-4">Previstos para este mês</h2>
+        <div className="bg-card rounded-xl border border-border-subtle p-6 mb-6">
+          <h2 className="text-sm font-medium text-muted-foreground mb-4">{t.dashboardPage.expectedThisMonth}</h2>
           <ProjectedView hideWhenEmpty />
         </div>
       )}

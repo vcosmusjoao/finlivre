@@ -4,9 +4,10 @@ export function formatBRL(cents: number): string {
   return (cents / 100).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 }
 
-export function monthLabel(yyyyMM: string): string {
+export function monthLabel(yyyyMM: string, locale: 'en' | 'pt' = 'pt'): string {
   const [year, month] = yyyyMM.split('-').map(Number);
-  const label = new Intl.DateTimeFormat('pt-BR', { month: 'short' }).format(new Date(year, month - 1));
+  const intlLocale = locale === 'en' ? 'en-US' : 'pt-BR';
+  const label = new Intl.DateTimeFormat(intlLocale, { month: 'short' }).format(new Date(year, month - 1));
   return `${label.replace('.', '')}/${String(year).slice(2)}`;
 }
 

@@ -3,10 +3,12 @@
 import { useState } from 'react';
 import { db } from '@/lib/db';
 import { useMonth } from '@/context/MonthContext';
+import { useLocale } from '@/i18n/LocaleContext';
 
 export function ClearDataButton() {
   const [confirming, setConfirming] = useState(false);
   const { setSelectedMonth } = useMonth();
+  const { t } = useLocale();
 
   async function handleClear() {
     await db.transaction('rw', [db.entries, db.accounts, db.categories, db.merchantRules, db.invoiceStatements, db.recurringItems, db.recurringOverrides], async () => {
@@ -25,20 +27,20 @@ export function ClearDataButton() {
   if (confirming) {
     return (
       <div className="flex items-center gap-2">
-        <span className="text-xs text-zinc-500 dark:text-zinc-400">Limpar tudo?</span>
+        <span className="text-xs text-muted-foreground">{t.clearDataButton.confirmPrompt}</span>
         <button
           type="button"
           onClick={() => setConfirming(false)}
-          className="text-xs px-2 py-1 rounded-lg border border-zinc-200 dark:border-zinc-700 text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors"
+          className="text-xs px-2 py-1 rounded-lg border border-border text-muted-foreground hover:bg-muted transition-colors"
         >
-          Cancelar
+          {t.common.cancel}
         </button>
         <button
           type="button"
           onClick={handleClear}
           className="text-xs px-2 py-1 rounded-lg bg-red-600 text-white hover:bg-red-700 transition-colors"
         >
-          Confirmar
+          {t.common.confirm}
         </button>
       </div>
     );
@@ -48,9 +50,9 @@ export function ClearDataButton() {
     <button
       type="button"
       onClick={() => setConfirming(true)}
-      className="text-xs px-3 py-1.5 rounded-lg border border-zinc-200 dark:border-zinc-700 text-zinc-500 dark:text-zinc-400 hover:border-red-400 hover:text-red-500 transition-colors"
+      className="text-xs px-3 py-1.5 rounded-lg border border-border text-muted-foreground hover:border-red-400 hover:text-red-500 transition-colors"
     >
-      Limpar dados
+      {t.clearDataButton.clearData}
     </button>
   );
 }

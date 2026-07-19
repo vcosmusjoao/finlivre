@@ -28,11 +28,9 @@ export interface BucketProgress {
   status: BucketStatus;
 }
 
-export interface BucketInsight {
-  bucketName: string;
-  message: string;
-  severity: 'warning' | 'success';
-}
+export type BucketInsight =
+  | { kind: 'over'; bucketName: string; overByReais: string; severity: 'warning' }
+  | { kind: 'reached'; bucketName: string; severity: 'success' };
 
 /** Replaces all buckets (and clears category assignments) with the preset in a single transaction. */
 export async function applyPreset(preset: BucketPreset): Promise<void> {
@@ -166,18 +164,19 @@ export function bucketInsights(
     );
 
     if (bucket.type === 'gasto' && status === 'over') {
-      const overBy = ((spentCents - targetCents) / 100).toFixed(2).replace('.', ',');
+      const overByReais = ((spentCents - targetCents) / 100).toFixed(2).replace('.', ',');
       return [{
+        kind: 'over' as const,
         bucketName: bucket.name,
-        message: `"${bucket.name}" ultrapassou o limite em R$ ${overBy}.`,
+        overByReais,
         severity: 'warning' as const,
       }];
     }
 
     if (bucket.type === 'meta' && status === 'reached') {
       return [{
+        kind: 'reached' as const,
         bucketName: bucket.name,
-        message: `Meta "${bucket.name}" atingida!`,
         severity: 'success' as const,
       }];
     }

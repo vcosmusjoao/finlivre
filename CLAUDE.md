@@ -10,7 +10,7 @@ Treat it as a learning project AND a portfolio piece.
 - `FIRST_SESSION.md` — what to tackle in the next session (updated after every milestone).
 - `docs/nextjs-notes.md` — Next.js mental model with Angular bridges (João is learning Next.js).
 
-## Current state (as of 2026-06-30)
+## Current state (as of 2026-07-19)
 - **M1 ✅** OFX import, categorization, spending chart, sample data, Vercel deploy.
 - **M2 ✅** Manual entries, income/expense, month filter, billing cycle (`billingMonth`).
 - **M3 ✅** Accounts (color-coded), recurring items, future month projections (on-the-fly),
@@ -52,12 +52,18 @@ Treat it as a learning project AND a portfolio piece.
   - **SpendingChart:** top 6 categorias + bucket "Outros" (cor `#a1a1aa`). Paleta expandida 8→12
     cores (`CATEGORY_COLORS` em `lib/categoryColor.ts`, `OUTROS_COLOR` adicionado).
   - **"Todos" → "Geral"** (pill no `MonthSelector`).
-- **M8 ⏳** — Categorias-mestre (baldes 50/30/20). Design aprovado 2026-06-30; em implementação.
+- **M8 ✅** — Categorias-mestre (baldes 50/30/20). Concluído 2026-06-30.
   - **Modelo (decidido):** Dexie v4, duas tabelas — `buckets` `{name, type:'gasto'|'meta', targetPercent, color, order}`
     + `categoryBuckets {category(PK), bucketId}` (espelha `merchantRules`). Base = renda do mês; metas não
     somam 100% (aviso suave); default 50/30/20; "Sobra do mês" derivada. Visual herói: balde de líquido animado.
     Roll-up puro em `lib/buckets.ts` (reusa `matchesFilters`). 3ª rota `/planejamento`.
   - Roteiro completo de implementação em `FIRST_SESSION.md`; design fixado em `PLAN.md §9 Milestone 8`.
+- **M9 ✅** — Tela de revisão unificada para imports. Comprometido `e3e7084` em 2026-07-12.
+  OFX passou a usar a mesma `ImportReviewTable` que o Vision já usava, com coluna de mês editável.
+- **M10 ✅** — Theming & i18n. 2026-07-19. Ver `PLAN.md §9 Milestone 10` para detalhes.
+  - Toggle claro/escuro/sistema (`next-themes`), ~14 tokens semânticos substituindo os `dark:`
+    espalhados, charts tema-aware (`useChartTheme.ts`), logo (`Logo.tsx` + `icon.svg`).
+  - Idioma EN/PT (`src/i18n/`), `LanguageSwitcher` no header. 112 testes no total.
 
 ## Working style (important)
 João is a strong Angular engineer learning React/Next.js. He has explicitly asked to:
@@ -85,7 +91,7 @@ bypasses the Entry ledger. This is what keeps the big vision buildable. See PLAN
 
 ## Stack
 Next.js 16 (App Router) · React 19 · TypeScript · Tailwind v4 · Dexie 4 (+ dexie-react-hooks)
-· Recharts 3 · deploy on Vercel. Node 20.
+· Recharts 3 · next-themes · deploy on Vercel. Node 20.
 
 ## Gotchas that will bite you
 - Dexie/IndexedDB is **browser-only**. Any module that touches the DB must run in a

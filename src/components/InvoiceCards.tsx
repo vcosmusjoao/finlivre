@@ -6,10 +6,12 @@ import { formatBRL, monthLabel } from '@/lib/format';
 import { useMonth } from '@/context/MonthContext';
 import { useAccountFilter } from '@/context/AccountFilterContext';
 import { matchesAccount } from '@/lib/filters';
+import { useLocale } from '@/i18n/LocaleContext';
 
 export function InvoiceCards() {
   const { selectedMonth } = useMonth();
   const { selectedAccountId } = useAccountFilter();
+  const { locale, t } = useLocale();
 
   const statements = useLiveQuery(
     () => selectedMonth
@@ -35,7 +37,7 @@ export function InvoiceCards() {
         return (
           <div
             key={stmt.id}
-            className="bg-white dark:bg-zinc-900 rounded-xl border border-zinc-200 dark:border-zinc-800 p-4"
+            className="bg-card rounded-xl border border-border-subtle p-4"
           >
             <div className="flex items-center gap-2 mb-3">
               {account?.color && (
@@ -44,15 +46,15 @@ export function InvoiceCards() {
                   style={{ background: account.color }}
                 />
               )}
-              <span className="text-xs font-medium text-zinc-500 dark:text-zinc-400 uppercase tracking-wide">
-                {account?.name ?? 'Cartão'} · fatura {monthLabel(stmt.month)}
+              <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                {account?.name ?? t.invoiceCards.cardFallback} · {t.invoiceCards.invoiceFor(monthLabel(stmt.month, locale))}
               </span>
             </div>
 
-            <p className="text-2xl font-semibold tabular-nums text-zinc-900 dark:text-zinc-50">
+            <p className="text-2xl font-semibold tabular-nums text-foreground">
               {formatBRL(stmt.balanceCents)}
             </p>
-            <p className="text-xs text-red-400 mt-0.5">a pagar</p>
+            <p className="text-xs text-red-400 mt-0.5">{t.invoiceCards.due}</p>
           </div>
         );
       })}

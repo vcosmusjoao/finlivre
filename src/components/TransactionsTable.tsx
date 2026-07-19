@@ -9,6 +9,7 @@ import { matchesFilters } from '@/lib/filters';
 import { colorForCategory } from '@/lib/categoryColor';
 import { learnRule, normalizeMerchant } from '@/lib/categorize';
 import { formatDate, monthLabel } from '@/lib/format';
+import { useLocale } from '@/i18n/LocaleContext';
 
 interface RetroPrompt {
   category: string;
@@ -29,6 +30,7 @@ async function saveCategory(entry: Entry, newCategory: string) {
 export function TransactionsTable() {
   const { selectedMonth } = useMonth();
   const { selectedAccountId } = useAccountFilter();
+  const { locale, t } = useLocale();
 
   const entries = useLiveQuery(() =>
     db.entries.orderBy('date').reverse()
@@ -144,17 +146,17 @@ export function TransactionsTable() {
   }
 
   const title = selectedMonth
-    ? `Lançamentos de ${monthLabel(selectedMonth)}`
-    : 'Todos os lançamentos';
-  const countLabel = `${entries.length} lançamento${entries.length !== 1 ? 's' : ''}`;
+    ? t.transactionsTable.titleForMonth(monthLabel(selectedMonth, locale))
+    : t.transactionsTable.titleAll;
+  const countLabel = t.transactionsTable.countLabel(entries.length);
 
   if (entries.length === 0) return (
     <>
       <div className="flex items-center justify-between mb-3">
-        <p className="text-sm font-semibold text-zinc-700 dark:text-zinc-300">{title}</p>
-        <span className="text-xs text-zinc-400">0 lançamentos</span>
+        <p className="text-sm font-semibold text-body">{title}</p>
+        <span className="text-xs text-zinc-400">{t.transactionsTable.countLabel(0)}</span>
       </div>
-      <p className="text-sm text-zinc-500">Nenhuma transação importada ainda.</p>
+      <p className="text-sm text-zinc-500">{t.transactionsTable.empty}</p>
     </>
   );
 
@@ -162,28 +164,28 @@ export function TransactionsTable() {
     <>
       {/* Title + count */}
       <div className="flex items-center justify-between mb-3">
-        <p className="text-sm font-semibold text-zinc-700 dark:text-zinc-300">{title}</p>
+        <p className="text-sm font-semibold text-body">{title}</p>
         <span className="text-xs text-zinc-400">{countLabel}</span>
       </div>
 
       <div className="overflow-x-auto">
         <table className="w-full text-sm">
           <thead>
-            <tr className="border-b border-zinc-200 dark:border-zinc-700">
+            <tr className="border-b border-border">
               <th className="py-2 pr-2 w-8">
                 <input
                   ref={headerCheckRef}
                   type="checkbox"
                   checked={allChecked}
                   onChange={toggleAll}
-                  aria-label="Selecionar todas"
+                  aria-label={t.transactionsTable.selectAll}
                   className="rounded border-zinc-300 text-indigo-600 focus:ring-indigo-500 cursor-pointer"
                 />
               </th>
-              <th className="py-2 pr-4 text-left font-medium text-zinc-500 dark:text-zinc-400 whitespace-nowrap">Data</th>
-              <th className="py-2 pr-4 text-left font-medium text-zinc-500 dark:text-zinc-400">Descrição</th>
-              <th className="py-2 pr-4 text-left font-medium text-zinc-500 dark:text-zinc-400">Categoria</th>
-              <th className="py-2 pr-4 text-right font-medium text-zinc-500 dark:text-zinc-400">Valor</th>
+              <th className="py-2 pr-4 text-left font-medium text-muted-foreground whitespace-nowrap">{t.transactionsTable.headers.date}</th>
+              <th className="py-2 pr-4 text-left font-medium text-muted-foreground">{t.transactionsTable.headers.description}</th>
+              <th className="py-2 pr-4 text-left font-medium text-muted-foreground">{t.transactionsTable.headers.category}</th>
+              <th className="py-2 pr-4 text-right font-medium text-muted-foreground">{t.transactionsTable.headers.amount}</th>
               <th className="py-2 w-8" />
             </tr>
           </thead>
@@ -193,10 +195,10 @@ export function TransactionsTable() {
               return (
                 <tr
                   key={entry.id}
-                  className={`group border-b border-zinc-100 dark:border-zinc-800 ${
+                  className={`group border-b border-border-divider ${
                     isSelected
-                      ? 'bg-indigo-50 dark:bg-indigo-950/40'
-                      : 'hover:bg-zinc-50 dark:hover:bg-zinc-800/50'
+                      ? 'bg-primary/10'
+                      : 'hover:bg-muted/50'
                   }`}
                 >
                   <td className="py-3 pr-2">
@@ -204,7 +206,7 @@ export function TransactionsTable() {
                       type="checkbox"
                       checked={isSelected}
                       onChange={() => toggleSelect(entry.id!)}
-                      aria-label={`Selecionar ${entry.description}`}
+                      aria-label={t.transactionsTable.selectOne(entry.description)}
                       className="rounded border-zinc-300 text-indigo-600 focus:ring-indigo-500 cursor-pointer"
                     />
                   </td>
@@ -223,12 +225,12 @@ export function TransactionsTable() {
                     </div>
                   </td>
 
-                  <td className="py-3 pr-4 text-zinc-900 dark:text-zinc-100">{entry.description}</td>
+                  <td className="py-3 pr-4 text-foreground">{entry.description}</td>
 
                   <td className="py-3 pr-4">
                     {entry.direction === 'transfer' ? (
-                      <span className="inline-block rounded-full bg-zinc-100 dark:bg-zinc-800 px-2 py-0.5 text-xs text-zinc-400 italic">
-                        pagamento fatura
+                      <span className="inline-block rounded-full bg-muted px-2 py-0.5 text-xs text-zinc-400 italic">
+                        {t.transactionsTable.invoicePayment}
                       </span>
                     ) : editingId === entry.id ? (
                       <div className="flex items-center gap-1">
@@ -242,7 +244,7 @@ export function TransactionsTable() {
                             if (e.key === 'Escape') cancelEdit();
                           }}
                           onBlur={() => commitEdit(entry)}
-                          className="rounded border border-indigo-400 bg-white dark:bg-zinc-800 px-2 py-0.5 text-xs text-zinc-900 dark:text-zinc-100 w-32 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                          className="rounded border border-indigo-400 bg-muted px-2 py-0.5 text-xs text-foreground w-32 focus:outline-none focus:ring-1 focus:ring-indigo-500"
                         />
                         <datalist id="cat-datalist">
                           {categories.map(c => <option key={c} value={c} />)}
@@ -252,15 +254,15 @@ export function TransactionsTable() {
                       <button
                         type="button"
                         onClick={() => startEdit(entry)}
-                        title="Clique para categorizar"
+                        title={t.transactionsTable.clickToCategorize}
                         className={`inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 text-xs transition-colors text-left ${
                           entry.category === 'Uncategorized'
-                            ? 'bg-amber-50 dark:bg-amber-950 text-amber-600 dark:text-amber-400 border border-dashed border-amber-300 dark:border-amber-700 hover:bg-amber-100'
-                            : 'bg-zinc-100 dark:bg-zinc-700 text-zinc-600 dark:text-zinc-300 hover:bg-zinc-200 dark:hover:bg-zinc-600'
+                            ? 'bg-warning/10 text-warning border border-dashed border-warning/30 hover:bg-warning/20'
+                            : 'bg-zinc-100 dark:bg-zinc-700 text-body hover:bg-zinc-200 dark:hover:bg-zinc-600'
                         }`}
                       >
                         {entry.category === 'Uncategorized' ? (
-                          '? Categorizar'
+                          t.transactionsTable.categorizePrompt
                         ) : (
                           <>
                             <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: colorForCategory(entry.category) }} />
@@ -273,8 +275,8 @@ export function TransactionsTable() {
 
                   <td className={`py-3 pr-4 text-right font-medium tabular-nums ${
                     entry.direction === 'income'   ? 'text-emerald-600' :
-                    entry.direction === 'transfer' ? 'text-zinc-400 dark:text-zinc-500' :
-                    'text-zinc-900 dark:text-zinc-100'
+                    entry.direction === 'transfer' ? 'text-muted-foreground' :
+                    'text-foreground'
                   }`}>
                     {entry.direction === 'income' ? '+' : entry.direction === 'transfer' ? '' : '-'} R$ {(entry.amountCents / 100).toFixed(2)}
                   </td>
@@ -284,7 +286,7 @@ export function TransactionsTable() {
                       type="button"
                       onClick={() => deleteEntry(entry)}
                       className="opacity-0 group-hover:opacity-100 text-zinc-400 hover:text-red-500 transition-all"
-                      aria-label="Apagar entrada"
+                      aria-label={t.transactionsTable.deleteEntry}
                     >
                       <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                         <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/>
@@ -302,7 +304,7 @@ export function TransactionsTable() {
       {selected.size > 0 && (
         <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 flex items-center gap-3 bg-zinc-900 text-white px-4 py-2.5 rounded-full shadow-2xl">
           <span className="text-sm font-medium whitespace-nowrap">
-            {selected.size} selecionada{selected.size !== 1 ? 's' : ''}
+            {t.transactionsTable.selectedCount(selected.size)}
           </span>
           <div className="w-px h-4 bg-zinc-700" />
           <select
@@ -310,7 +312,7 @@ export function TransactionsTable() {
             onChange={e => setBulkCategory(e.target.value)}
             className="bg-zinc-800 text-white text-sm rounded-full px-3 py-1 border border-zinc-700 focus:outline-none focus:ring-1 focus:ring-indigo-400 min-w-[10rem]"
           >
-            <option value="">Categoria...</option>
+            <option value="">{t.transactionsTable.categoryPlaceholderOption}</option>
             {categories.filter(c => c !== 'Uncategorized').map(c => (
               <option key={c} value={c}>{c}</option>
             ))}
@@ -321,12 +323,12 @@ export function TransactionsTable() {
             disabled={!bulkCategory}
             className="bg-indigo-600 hover:bg-indigo-500 disabled:opacity-40 disabled:cursor-not-allowed text-sm font-medium px-4 py-1.5 rounded-full transition-colors"
           >
-            Aplicar
+            {t.transactionsTable.apply}
           </button>
           <button
             type="button"
             onClick={() => { setSelected(new Set()); setBulkCategory(''); }}
-            aria-label="Cancelar seleção"
+            aria-label={t.transactionsTable.cancelSelection}
             className="text-zinc-400 hover:text-white transition-colors p-1"
           >
             <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
@@ -339,30 +341,30 @@ export function TransactionsTable() {
       {/* Retroactive categorization confirmation */}
       <dialog
         ref={retroDialogRef}
-        className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 rounded-xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 shadow-xl p-6 w-full max-w-sm"
+        className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 rounded-xl bg-card border border-border-subtle shadow-xl p-6 w-full max-w-sm"
       >
         {retroPrompt && (
           <>
-            <h3 className="text-base font-semibold text-zinc-900 dark:text-zinc-100 mb-2">
-              Categorizar similares?
+            <h3 className="text-base font-semibold text-foreground mb-2">
+              {t.transactionsTable.retroTitle}
             </h3>
-            <p className="text-sm text-zinc-600 dark:text-zinc-400 mb-5">
-              Encontramos <strong>{retroPrompt.candidates.length}</strong> outra{retroPrompt.candidates.length !== 1 ? 's' : ''} transaç{retroPrompt.candidates.length !== 1 ? 'ões' : 'ão'} sem categoria dos mesmos comerciantes. Aplicar <strong>&ldquo;{retroPrompt.category}&rdquo;</strong> a elas também?
+            <p className="text-sm text-muted-foreground mb-5">
+              {t.transactionsTable.retroBody(retroPrompt.candidates.length, retroPrompt.category)}
             </p>
             <div className="flex gap-2 justify-end">
               <button
                 type="button"
                 onClick={dismissRetro}
-                className="text-sm px-4 py-2 rounded-lg border border-zinc-200 dark:border-zinc-700 text-zinc-600 dark:text-zinc-400 hover:bg-zinc-50 dark:hover:bg-zinc-800 transition-colors"
+                className="text-sm px-4 py-2 rounded-lg border border-border text-muted-foreground hover:bg-muted transition-colors"
               >
-                Só as selecionadas
+                {t.transactionsTable.onlySelected}
               </button>
               <button
                 type="button"
                 onClick={applyRetro}
                 className="text-sm px-4 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white font-medium transition-colors"
               >
-                Aplicar a todas
+                {t.transactionsTable.applyToAll}
               </button>
             </div>
           </>
