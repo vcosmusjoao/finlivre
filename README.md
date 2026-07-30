@@ -48,7 +48,7 @@ So I built my own. FinLivre imports my real statements, categorizes everything, 
 
 **Money as integer cents.** Amounts are stored as `amountCents` integers, never floats. R$ 24,90 is 2490. Floating point money is how you get rounding bugs.
 
-**Tested.** United tests with jest.
+**Tested.** Unit tests with jest.
 
 ## Tech
 
