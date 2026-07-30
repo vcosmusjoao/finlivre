@@ -302,15 +302,15 @@ export function TransactionsTable() {
 
       {/* Floating action bar — appears when rows are selected */}
       {selected.size > 0 && (
-        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 flex items-center gap-3 bg-zinc-900 text-white px-4 py-2.5 rounded-full shadow-2xl">
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 flex items-center gap-3 bg-zinc-900 dark:bg-zinc-50 text-white dark:text-zinc-900 px-4 py-2.5 rounded-full shadow-2xl">
           <span className="text-sm font-medium whitespace-nowrap">
             {t.transactionsTable.selectedCount(selected.size)}
           </span>
-          <div className="w-px h-4 bg-zinc-700" />
+          <div className="w-px h-4 bg-zinc-700 dark:bg-zinc-300" />
           <select
             value={bulkCategory}
             onChange={e => setBulkCategory(e.target.value)}
-            className="bg-zinc-800 text-white text-sm rounded-full px-3 py-1 border border-zinc-700 focus:outline-none focus:ring-1 focus:ring-indigo-400 min-w-[10rem]"
+            className="bg-zinc-800 dark:bg-zinc-200 text-white dark:text-zinc-900 text-sm rounded-full px-3 py-1 border border-zinc-700 dark:border-zinc-300 focus:outline-none focus:ring-1 focus:ring-indigo-400 min-w-[10rem]"
           >
             <option value="">{t.transactionsTable.categoryPlaceholderOption}</option>
             {categories.filter(c => c !== 'Uncategorized').map(c => (
@@ -329,7 +329,7 @@ export function TransactionsTable() {
             type="button"
             onClick={() => { setSelected(new Set()); setBulkCategory(''); }}
             aria-label={t.transactionsTable.cancelSelection}
-            className="text-zinc-400 hover:text-white transition-colors p-1"
+            className="text-zinc-400 hover:text-white dark:hover:text-zinc-900 transition-colors p-1"
           >
             <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
               <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>

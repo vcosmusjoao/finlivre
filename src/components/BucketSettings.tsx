@@ -147,7 +147,7 @@ export function BucketSettings() {
                     value={b.color}
                     onChange={e => updateBucket(i, { color: e.target.value })}
                     className="w-7 h-7 rounded-lg cursor-pointer border-0 bg-transparent p-0"
-                    title="Cor do balde"
+                    title={t.bucketSettings.colorLabel}
                   />
                   <input
                     type="text"

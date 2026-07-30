@@ -1,5 +1,7 @@
 'use client';
 
+import { useLiveQuery } from 'dexie-react-hooks';
+import { db } from '@/lib/db';
 import { useMonth } from '@/context/MonthContext';
 import { currentMonth } from '@/lib/format';
 import { SummaryCards } from '@/components/SummaryCards';
@@ -9,6 +11,7 @@ import { SpendingByAccountChart } from '@/components/SpendingByAccountChart';
 import { IncomeExpenseChart } from '@/components/IncomeExpenseChart';
 import { TransactionsTable } from '@/components/TransactionsTable';
 import { ProjectedView } from '@/components/ProjectedView';
+import { DashboardEmptyState } from '@/components/DashboardEmptyState';
 import Link from 'next/link';
 import { useLocale } from '@/i18n/LocaleContext';
 
@@ -18,6 +21,12 @@ export default function DashboardPage() {
   const now = currentMonth();
   const isFuture = !!selectedMonth && selectedMonth > now;
   const isCurrentMonth = !!selectedMonth && selectedMonth === now;
+
+  // A stranger's first view: no data anywhere yet, regardless of selected month.
+  const entryCount = useLiveQuery(() => db.entries.count());
+  if (entryCount === 0) {
+    return <DashboardEmptyState />;
+  }
 
   // Geral (no month selected): aggregate charts, no table
   if (!selectedMonth) {

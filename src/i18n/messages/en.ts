@@ -96,6 +96,7 @@ export interface Messages {
     assignCategories: string;
     unassignedCount: (n: number) => string;
     noBucket: string;
+    colorLabel: string;
   };
   bucketType: {
     gasto: string;
@@ -258,12 +259,17 @@ export interface Messages {
     analyzing: string;
     import: string;
     genericError: string;
+    refusalError: string;
   };
-  dashboardBody: {
-    upcomingCommitments: string;
-    projection: string;
-    spendingByCategory: string;
-    expectedThisMonth: string;
+  dashboardEmptyState: {
+    title: string;
+    subtitle: string;
+    stepImport: string;
+    stepCategorize: string;
+    stepInsights: string;
+    sampleButton: string;
+    sampleLoading: string;
+    addFirst: string;
   };
   dashboardPage: {
     spendingByCategory: string;
@@ -380,6 +386,7 @@ export const en: Messages = {
     assignCategories: 'Assign categories',
     unassignedCount: (n: number) => `${n} unassigned`,
     noBucket: '— no bucket —',
+    colorLabel: 'Bucket color',
   },
   bucketType: {
     gasto: 'Expense',
@@ -543,12 +550,18 @@ export const en: Messages = {
     analyzing: 'Analyzing with AI…',
     import: 'Import photo/PDF',
     genericError: 'Error analyzing. Check your API key and connection.',
+    refusalError: 'The AI declined this request. Try another image or review its content.',
   },
-  dashboardBody: {
-    upcomingCommitments: 'Upcoming commitments',
-    projection: 'projection',
-    spendingByCategory: 'Spending by category',
-    expectedThisMonth: 'Expected this month',
+  dashboardEmptyState: {
+    title: 'See your finances clearly',
+    subtitle:
+      "Import statements, track spending, and plan your budget — 100% local, your data never leaves this browser.",
+    stepImport: 'Import or add',
+    stepCategorize: 'Auto-categorize',
+    stepInsights: 'See insights',
+    sampleButton: 'See it with sample data',
+    sampleLoading: 'Loading sample…',
+    addFirst: 'Or add your first transaction',
   },
   dashboardPage: {
     spendingByCategory: 'Spending by category',

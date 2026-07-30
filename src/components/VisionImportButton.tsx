@@ -84,7 +84,7 @@ export function VisionImportButton() {
       });
     } catch (e) {
       const message = e instanceof VisionRefusalError
-        ? e.message
+        ? t.visionImportButton.refusalError
         : t.visionImportButton.genericError;
       setFlow({ step: 'error', message });
     }

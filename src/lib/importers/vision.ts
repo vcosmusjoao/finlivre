@@ -133,10 +133,11 @@ export interface ParsedStatement {
   fromCache: boolean;
 }
 
-/** Raised when the model declines the request via the refusal stop reason. */
+/** Raised when the model declines the request via the refusal stop reason. The
+ * message here is for logs only — callers show a localized string instead. */
 export class VisionRefusalError extends Error {
   constructor() {
-    super("A IA recusou a solicitação. Tente outra imagem ou revise o conteúdo.");
+    super("The AI declined the request (refusal stop reason).");
     this.name = "VisionRefusalError";
   }
 }

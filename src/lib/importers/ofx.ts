@@ -38,32 +38,6 @@ export interface Importer {
   parse(fileText: string): ParsedEntry[];
 }
 
-/**
- * ===== MILESTONE 1 EXERCISE — implement this. =====
- *
- * OFX is an SGML/XML-ish format. Inside it, each transaction is a <STMTTRN> block:
- *
- *   <STMTTRN>
- *     <TRNTYPE>DEBIT
- *     <DTPOSTED>20260615
- *     <TRNAMT>-24.90
- *     <MEMO>UBER *TRIP
- *   </STMTTRN>
- *
- * Steps:
- *   1. Find every <STMTTRN>...</STMTTRN> block (a global regex is fine to start).
- *   2. For each block, read:
- *        - DTPOSTED  -> date (first 8 chars = YYYYMMDD -> "YYYY-MM-DD")
- *        - TRNAMT    -> signed amount; amountCents = Math.round(Math.abs(value) * 100)
- *        - direction -> value < 0 ? "expense" : "income"
- *        - MEMO/NAME -> description
- *   3. Detect installments in the description ("Parcela 3/12" or "03/12") -> { current, total }.
- *   4. Return ParsedEntry[]. Do NOT categorize or hash here — that's the pipeline's job.
- *
- * Try it yourself first against a real Nubank .ofx export. Ask for help only if stuck.
- */
-
-
 function getField(block: string, tag: string): string {
   const match = block.match(new RegExp(`<${tag}>([^<\n]+)`, 'i'));
   return match?.[1].trim() ?? '';

@@ -96,6 +96,7 @@ export const pt: Messages = {
     assignCategories: 'Atribuir categorias',
     unassignedCount: (n: number) => `${n} sem balde`,
     noBucket: '— sem balde —',
+    colorLabel: 'Cor do balde',
   },
   bucketType: {
     gasto: 'Gasto',
@@ -259,12 +260,18 @@ export const pt: Messages = {
     analyzing: 'Analisando com IA…',
     import: 'Importar foto/PDF',
     genericError: 'Erro ao analisar. Verifique a chave da API e a conexão.',
+    refusalError: 'A IA recusou a solicitação. Tente outra imagem ou revise o conteúdo.',
   },
-  dashboardBody: {
-    upcomingCommitments: 'Compromissos futuros',
-    projection: 'projeção',
-    spendingByCategory: 'Gastos por categoria',
-    expectedThisMonth: 'Previstos para este mês',
+  dashboardEmptyState: {
+    title: 'Veja suas finanças com clareza',
+    subtitle:
+      'Importe faturas, acompanhe gastos e planeje seu orçamento — 100% local, seus dados nunca saem do navegador.',
+    stepImport: 'Importe ou adicione',
+    stepCategorize: 'Categorize automaticamente',
+    stepInsights: 'Veja os insights',
+    sampleButton: 'Ver com dados de exemplo',
+    sampleLoading: 'Carregando exemplo…',
+    addFirst: 'Ou adicione seu primeiro lançamento',
   },
   dashboardPage: {
     spendingByCategory: 'Gastos por categoria',
