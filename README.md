@@ -30,11 +30,11 @@ So I built my own. FinLivre imports my real statements, categorizes everything, 
 
 | Dashboard | Lançamentos |
 |---|---|
-| ![Dashboard](docs/screenshots/dashboard.png) | ![Lançamentos](docs/screenshots/lancamentos.png) |
+| ![Dashboard](docs/screenshots/dashboard_pt.png) | ![Lançamentos](docs/screenshots/lancamentos_out_pt.png) |
 
 | Vision import (AI review) | Planejamento (animated buckets) |
 |---|---|
-| ![Vision import review](docs/screenshots/vision-import.png) | ![Planejamento](docs/screenshots/planejamento.png) |
+| ![Vision import review](docs/screenshots/revisar_transacao_pdf_foto_pt.png) | ![Planejamento](docs/screenshots/planejamento_pt.png) |
 
 ## Highlights
 
